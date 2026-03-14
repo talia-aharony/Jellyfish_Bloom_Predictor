@@ -1,3 +1,10 @@
+"""
+Jellyfish Presence Prediction - Pure PyTorch Implementation
+Using ONLY torch methods - NO TensorFlow, NO sklearn
+Explicit layer definitions matching reference style
+Includes baseline logistic regression model for benchmarking
+"""
+
 import numpy as np
 import time
 import torch
@@ -109,6 +116,111 @@ class DataGenerator:
         ])
         
         return features.astype(np.float32), labels
+
+
+# ============================================================================
+# FEATURE ENGINEERING FOR BASELINE MODEL
+# ============================================================================
+
+def create_engineered_features(X, lookback=7):
+    """Create engineered features for baseline logistic regression
+    
+    Fixed-length temporal windows with:
+    - Lagged variables: current, t-1, t-2, etc.
+    - Rolling averages: 7-day and 14-day windows
+    - Rolling standard deviations
+    
+    This allows the baseline logistic regression model to capture
+    temporal patterns without using RNN architecture.
+    
+    Args:
+        X: Shape (n_samples, n_features)
+        lookback: Number of days to look back
+    
+    Returns:
+        X_engineered: Shape (n_samples - lookback + 1, engineered_dim)
+    """
+    
+    n_samples, n_features = X.shape
+    engineered_features = []
+    
+    for i in range(n_samples - lookback + 1):
+        window = X[i:i+lookback]  # (lookback, n_features)
+        
+        # 1. Current values (t=0, most recent)
+        current = window[-1, :]  # (n_features,)
+        
+        # 2. Lagged values (t-1, t-2, t-3)
+        lag1 = window[-2, :] if lookback >= 2 else window[0, :]
+        lag2 = window[-3, :] if lookback >= 3 else window[0, :]
+        lag3 = window[-4, :] if lookback >= 4 else window[0, :]
+        
+        # 3. Rolling mean (7-day window)
+        rolling_mean_7 = np.mean(window, axis=0)
+        
+        # 4. Rolling standard deviation (7-day window)
+        rolling_std_7 = np.std(window, axis=0)
+        
+        # 5. Rolling mean (shorter 3-day if available)
+        rolling_mean_3 = np.mean(window[-3:, :], axis=0) if lookback >= 3 else rolling_mean_7
+        
+        # 6. Change from previous day (current - lag1)
+        change_1day = current - lag1
+        
+        # 7. Change from 3 days ago (current - lag3)
+        change_3day = current - lag3
+        
+        # Concatenate all engineered features
+        engineered = np.concatenate([
+            current,           # Current values (n_features,)
+            lag1,             # Lag 1 (n_features,)
+            lag2,             # Lag 2 (n_features,)
+            lag3,             # Lag 3 (n_features,)
+            rolling_mean_7,   # 7-day rolling mean (n_features,)
+            rolling_std_7,    # 7-day rolling std (n_features,)
+            rolling_mean_3,   # 3-day rolling mean (n_features,)
+            change_1day,      # 1-day change (n_features,)
+            change_3day       # 3-day change (n_features,)
+        ])
+        
+        engineered_features.append(engineered)
+    
+    return np.array(engineered_features, dtype=np.float32)
+
+
+# ============================================================================
+# BASELINE MODEL - MULTINOMIAL LOGISTIC REGRESSION
+# ============================================================================
+
+class BaselineLogisticRegression(nn.Module):
+    """Baseline: Multinomial Logistic Regression
+    
+    Simple linear model for binary classification of jellyfish presence.
+    Uses fixed-length temporal windows of meteorological data with:
+    - Lagged variables (t, t-1, t-2)
+    - Rolling averages (7-day, 14-day windows)
+    
+    This serves as a benchmark to evaluate neural network performance.
+    A linear model can capture long-range dependencies through feature
+    engineering alone, without requiring complex architectures.
+    """
+    
+    def __init__(self, input_dim):
+        super(BaselineLogisticRegression, self).__init__()
+        
+        # Single linear layer: logistic regression
+        # Maps flattened input directly to probability of jellyfish presence
+        self.linear = nn.Linear(input_dim, 1)
+    
+    def forward(self, x):
+        # Flatten input to (batch_size, input_dim)
+        batch_size = x.size(0)
+        x = x.view(batch_size, -1)
+        
+        # Linear transformation followed by sigmoid
+        # This is equivalent to multinomial logistic regression
+        x = self.linear(x)
+        return torch.sigmoid(x)
 
 
 # ============================================================================
@@ -719,6 +831,87 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}\n")
     
+    # Store all model results
+    results = {}
+    
+    # =====================================================================
+    # BASELINE MODEL - LOGISTIC REGRESSION
+    # =====================================================================
+    print("TRAINING BASELINE MODEL (LOGISTIC REGRESSION)")
+    print("-" * 50)
+    
+    # Create engineered features for baseline
+    X_engineered = create_engineered_features(X, lookback=7)
+    
+    # Adjust y to match engineered features length
+    y_baseline = y[6:]  # Skip first 6 samples due to feature engineering
+    
+    # Normalize engineered features
+    X_eng_tensor = torch.FloatTensor(X_engineered)
+    mean_eng = X_eng_tensor.mean(dim=0)
+    std_eng = X_eng_tensor.std(dim=0)
+    X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
+    y_eng_tensor = torch.FloatTensor(y_baseline)
+    
+    # Create dataset
+    baseline_dataset = TensorDataset(X_eng_normalized, y_eng_tensor)
+    
+    # Split dataset
+    train_size_baseline = int(0.7 * len(baseline_dataset))
+    val_size_baseline = int(0.15 * len(baseline_dataset))
+    test_size_baseline = len(baseline_dataset) - train_size_baseline - val_size_baseline
+    
+    train_dataset_bl, val_dataset_bl, test_dataset_bl = random_split(
+        baseline_dataset,
+        [train_size_baseline, val_size_baseline, test_size_baseline],
+        generator=torch.Generator().manual_seed(42)
+    )
+    
+    # Create dataloaders
+    train_loader_bl = DataLoader(train_dataset_bl, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader_bl = DataLoader(val_dataset_bl, batch_size=BATCH_SIZE, shuffle=False)
+    test_loader_bl = DataLoader(test_dataset_bl, batch_size=BATCH_SIZE, shuffle=False)
+    
+    # Train baseline
+    baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
+    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=LEARNING_RATE)
+    
+    start_time = time.time()
+    baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=NUM_EPOCHS, patience=15)
+    baseline_time = time.time() - start_time
+    
+    # Test baseline
+    baseline_metrics = baseline_trainer.test(test_loader_bl)
+    
+    print(f"\nBaseline (Logistic Regression) Results:")
+    print(f"  Accuracy: {baseline_metrics['accuracy']:.4f}")
+    print(f"  Precision: {baseline_metrics['precision']:.4f}")
+    print(f"  Recall: {baseline_metrics['recall']:.4f}")
+    print(f"  F1-Score: {baseline_metrics['f1']:.4f}")
+    print(f"  AUC-ROC: {baseline_metrics['auc']:.4f}")
+    print(f"  Train time: {baseline_time:.1f}s")
+    print(f"  Engineered features: {X_eng_normalized.shape[1]}")
+    print(f"  Model parameters: {sum(p.numel() for p in baseline_model.parameters()):,}")
+    
+    # Plot baseline
+    plot_training_history(baseline_trainer, 'Baseline_LogisticRegression')
+    
+    # Store baseline results
+    results['Baseline (Logistic Regression)'] = {
+        'accuracy': baseline_metrics['accuracy'],
+        'precision': baseline_metrics['precision'],
+        'recall': baseline_metrics['recall'],
+        'f1': baseline_metrics['f1'],
+        'auc': baseline_metrics['auc'],
+        'params': sum(p.numel() for p in baseline_model.parameters()),
+        'time': baseline_time
+    }
+    
+    print()
+    
+    # =====================================================================
+    # NEURAL NETWORK MODELS
+    # =====================================================================
     models = {
         'Feedforward': FeedforwardNet(input_dim=18*7, dropout_prob=DROPOUT_PROB),
         'LSTM': LSTMNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB),
@@ -726,8 +919,6 @@ if __name__ == '__main__':
         'Conv1D': Conv1DNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB),
         'Hybrid': HybridNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB)
     }
-    
-    results = {}
     
     for model_name, model in models.items():
         print(f"\nTraining {model_name}...")
@@ -772,16 +963,41 @@ if __name__ == '__main__':
     # SUMMARY
     # =====================================================================
     print("\n" + "=" * 100)
-    print("RESULTS SUMMARY")
+    print("RESULTS SUMMARY - BASELINE vs NEURAL NETWORKS")
     print("=" * 100)
     print()
     
-    print(f"{'Model':<15} {'Accuracy':<12} {'Precision':<12} {'Recall':<12} {'F1':<12} {'AUC':<12} {'Params':<12}")
-    print("-" * 95)
+    print(f"{'Model':<35} {'Accuracy':<12} {'Precision':<12} {'Recall':<12} {'F1':<12} {'AUC':<12} {'Params':<12}")
+    print("-" * 115)
     
-    for model_name, metrics in results.items():
-        print(f"{model_name:<15} {metrics['accuracy']:<12.4f} {metrics['precision']:<12.4f} "
+    # Sort results: baseline first, then neural networks
+    sorted_results = sorted(results.items(), key=lambda x: (x[0] != 'Baseline (Logistic Regression)', x[0]))
+    
+    for model_name, metrics in sorted_results:
+        print(f"{model_name:<35} {metrics['accuracy']:<12.4f} {metrics['precision']:<12.4f} "
               f"{metrics['recall']:<12.4f} {metrics['f1']:<12.4f} {metrics['auc']:<12.4f} {metrics['params']:<12,}")
     
-    print("\n✓ Pure PyTorch implementation complete!")
+    # Calculate improvements
+    baseline_acc = results['Baseline (Logistic Regression)']['accuracy']
+    baseline_f1 = results['Baseline (Logistic Regression)']['f1']
+    baseline_auc = results['Baseline (Logistic Regression)']['auc']
+    
+    print("\n" + "=" * 100)
+    print("NEURAL NETWORK IMPROVEMENTS OVER BASELINE")
+    print("=" * 100)
+    print()
+    
+    for model_name, metrics in sorted_results:
+        if model_name != 'Baseline (Logistic Regression)':
+            acc_improvement = (metrics['accuracy'] - baseline_acc) / baseline_acc * 100 if baseline_acc > 0 else 0
+            f1_improvement = (metrics['f1'] - baseline_f1) / baseline_f1 * 100 if baseline_f1 > 0 else 0
+            auc_improvement = (metrics['auc'] - baseline_auc) / baseline_auc * 100 if baseline_auc > 0 else 0
+            
+            print(f"{model_name:<35}")
+            print(f"  Accuracy improvement: {acc_improvement:+.2f}%")
+            print(f"  F1-Score improvement: {f1_improvement:+.2f}%")
+            print(f"  AUC-ROC improvement: {auc_improvement:+.2f}%")
+            print()
+    
+    print("\n✓ Pure PyTorch implementation with baseline model complete!")
     print("=" * 100)
