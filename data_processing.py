@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, TensorDataset, random_split, Subset
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
+from data_loader import load_jellyfish_data
 
 # Set random seeds
 np.random.seed(42)
@@ -744,8 +745,10 @@ if __name__ == '__main__':
     print("1. DATA GENERATION")
     print("-" * 100)
     
-    generator = DataGenerator()
-    X, y = generator.generate_synthetic_data(n_days=1200)
+    # generator = DataGenerator()
+    # X, y = generator.generate_synthetic_data(n_days=1200)
+
+    X, y = load_jellyfish_data()
     
     print(f"✓ Generated dataset shape: {X.shape}")
     print(f"✓ Jellyfish presence: {int(y.sum())} days ({y.mean()*100:.1f}%)")
@@ -912,12 +915,15 @@ if __name__ == '__main__':
     # =====================================================================
     # NEURAL NETWORK MODELS
     # =====================================================================
+    sequence_length = X_sequences.shape[1]
+    feature_dim = X_sequences.shape[2]
+
     models = {
-        'Feedforward': FeedforwardNet(input_dim=18*7, dropout_prob=DROPOUT_PROB),
-        'LSTM': LSTMNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB),
-        'GRU': GRUNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB),
-        'Conv1D': Conv1DNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB),
-        'Hybrid': HybridNet(input_dim=18, hidden_dim=64, dropout_prob=DROPOUT_PROB)
+        'Feedforward': FeedforwardNet(input_dim=feature_dim * sequence_length, dropout_prob=DROPOUT_PROB),
+        'LSTM': LSTMNet(input_dim=feature_dim, hidden_dim=64, dropout_prob=DROPOUT_PROB),
+        'GRU': GRUNet(input_dim=feature_dim, hidden_dim=64, dropout_prob=DROPOUT_PROB),
+        'Conv1D': Conv1DNet(input_dim=feature_dim, hidden_dim=64, dropout_prob=DROPOUT_PROB),
+        'Hybrid': HybridNet(input_dim=feature_dim, hidden_dim=64, dropout_prob=DROPOUT_PROB)
     }
     
     for model_name, model in models.items():
