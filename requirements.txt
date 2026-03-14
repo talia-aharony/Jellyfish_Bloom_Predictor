@@ -1,0 +1,9 @@
+numpy>=1.26,<3.0
+pandas>=2.2,<3.0
+scikit-learn>=1.4,<2.0
+matplotlib>=3.8,<4.0
+seaborn>=0.13,<1.0
+
+torch>=2.2,<3.0
+torchvision>=0.17,<1.0
+torchaudio>=2.2,<3.0
