@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from datetime import timedelta
-from data_loader_forecasting import load_jellyfish_data
+from data_loader import load_jellyfish_data
 from models import (
     BaselineLogisticRegression,
     FeedforwardNet,

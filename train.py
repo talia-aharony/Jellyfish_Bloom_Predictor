@@ -16,7 +16,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-from data_loader_forecasting import load_jellyfish_data
+from data_loader import load_jellyfish_data
 from models import (
     BaselineLogisticRegression,
     FeedforwardNet,
