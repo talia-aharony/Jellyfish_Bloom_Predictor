@@ -65,10 +65,8 @@ def load_jellyfish_data(lookback_days=7, forecast_days=1):
     events = events.dropna(subset=["beach_id"]).copy()
     events["beach_id"] = events["beach_id"].astype(np.int64)
 
-
-    # Keep only rows with valid beach IDs
-    events = events.dropna(subset=["beach_id"]).copy()
-    events["beach_id"] = events["beach_id"].astype(np.int64)
+    # Exclude synthetic catch-all locality
+    events = events[events["beach_name"].astype(str).str.strip().str.lower() != "other"].copy()
 
     # Extract species from occurrenceID
     occ["species"] = occ["occurrenceID"].str.extract(r'-(.*?)_by')
