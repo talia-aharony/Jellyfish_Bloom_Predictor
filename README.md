@@ -6,20 +6,23 @@ Forecast jellyfish presence at Israeli Mediterranean beaches using citizen-scien
 
 ```
 Jellyfish_Bloom_Predictor/
-├── jellyfish/                  # Package-style imports (wrappers)
+├── jellyfish/                  # Core package
 │   ├── __init__.py
 │   ├── data_loader.py
+│   ├── data_loader_forecasting.py
+│   ├── evaluator.py
+│   ├── evaluate_models.py
 │   ├── models.py
+│   ├── predict_example.py
 │   ├── predictor.py
+│   ├── train.py
 │   └── weather.py
 ├── scripts/                    # Stable entrypoints
 │   ├── train.py
 │   ├── predict.py
 │   └── evaluate.py
 ├── data/                       # Raw data files
-├── train.py                    # Core training implementation
-├── predictor.py                # Core prediction implementation
-├── models.py                   # Model definitions
+├── README.md
 └── requirements.txt
 ```
 

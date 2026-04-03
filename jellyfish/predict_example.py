@@ -9,7 +9,16 @@ This script demonstrates how to:
 4. Compare models
 """
 
-from predictor import JellyfishPredictor
+import os
+import sys
+
+if __package__ in (None, ""):
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    from jellyfish.predictor import JellyfishPredictor
+else:
+    from .predictor import JellyfishPredictor
 import pandas as pd
 import numpy as np
 
@@ -66,14 +75,14 @@ def main():
             loaded_models.append(model_name)
         except FileNotFoundError:
             print(f"⚠ Could not load {model_name} - {model_path} not found")
-            print(f"  (Run 'python train.py' first to train models)")
+            print(f"  (Run 'python scripts/train.py' first to train models)")
     
     print(f"\n✓ Loaded {len(loaded_models)} models: {', '.join(loaded_models)}")
     print()
     
     if not loaded_models:
         print("ERROR: No models loaded. Please train models first:")
-        print("  python train.py")
+        print("  python scripts/train.py")
         return
     
     # =========================================================================

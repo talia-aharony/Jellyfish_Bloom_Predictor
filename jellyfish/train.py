@@ -13,18 +13,34 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset, random_split
 import matplotlib.pyplot as plt
 import warnings
+import os
+import sys
 
 warnings.filterwarnings('ignore')
 
-from data_loader import load_jellyfish_data
-from models import (
-    BaselineLogisticRegression,
-    FeedforwardNet,
-    LSTMNet,
-    GRUNet,
-    Conv1DNet,
-    HybridNet
-)
+if __package__ in (None, ""):
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    from jellyfish.data_loader import load_jellyfish_data
+    from jellyfish.models import (
+        BaselineLogisticRegression,
+        FeedforwardNet,
+        LSTMNet,
+        GRUNet,
+        Conv1DNet,
+        HybridNet
+    )
+else:
+    from .data_loader import load_jellyfish_data
+    from .models import (
+        BaselineLogisticRegression,
+        FeedforwardNet,
+        LSTMNet,
+        GRUNet,
+        Conv1DNet,
+        HybridNet
+    )
 
 # Hyperparameters
 BATCH_SIZE = 32

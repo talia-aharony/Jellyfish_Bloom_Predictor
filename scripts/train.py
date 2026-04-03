@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from train import train_all_models
+from jellyfish.train import train_all_models
 
 
 if __name__ == "__main__":

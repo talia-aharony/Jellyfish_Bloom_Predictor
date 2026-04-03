@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from evaluate_models import main
+from jellyfish.evaluate_models import main
 
 
 if __name__ == "__main__":

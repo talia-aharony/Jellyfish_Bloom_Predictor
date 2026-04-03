@@ -54,17 +54,17 @@ class ModelEvaluator:
         print(f"Evaluating on {len(test_predictions_list)} predictions...")
         
         for beach_id, forecast_date in test_predictions_list:
-            result = self.predictor.predict_for_beach_date(beach_id, forecast_date)
+            baseline_result = self.predictor.predict_for_beach_date(beach_id, forecast_date, 'Baseline')
+            your_model_result = self.predictor.predict_for_beach_date(beach_id, forecast_date, 'Hybrid')
             
-            if 'error' not in result:
-                # Get predictions and probabilities
-                baseline_preds.append(1 if result['baseline']['prediction'] == 'Yes' else 0)
-                baseline_probs.append(result['baseline']['probability'])
+            if 'error' not in baseline_result and 'error' not in your_model_result:
+                baseline_preds.append(1 if baseline_result['prediction'] == 'Yes' else 0)
+                baseline_probs.append(baseline_result['probability'])
                 
-                your_model_preds.append(1 if result['your_model']['prediction'] == 'Yes' else 0)
-                your_model_probs.append(result['your_model']['probability'])
+                your_model_preds.append(1 if your_model_result['prediction'] == 'Yes' else 0)
+                your_model_probs.append(your_model_result['probability'])
                 
-                actuals.append(1 if result['actual'] == 'Yes' else 0)
+                actuals.append(1 if baseline_result['actual'] == 1 else 0)
         
         # Convert to arrays
         baseline_preds = np.array(baseline_preds)

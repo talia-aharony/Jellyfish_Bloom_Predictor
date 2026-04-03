@@ -10,8 +10,18 @@ Shows how to evaluate Baseline vs Your Model with comprehensive metrics:
 - Head-to-head comparison
 """
 
-from predictor_v2 import JellyfishPredictor
-from evaluator import ModelEvaluator
+import os
+import sys
+
+if __package__ in (None, ""):
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    from jellyfish.predictor import JellyfishPredictor
+    from jellyfish.evaluator import ModelEvaluator
+else:
+    from .predictor import JellyfishPredictor
+    from .evaluator import ModelEvaluator
 import pandas as pd
 import numpy as np
 
@@ -34,11 +44,11 @@ def main():
     
     # Load models
     try:
-        predictor.load_baseline_model('baseline_model.pth')
-        predictor.load_your_model('hybrid_model.pth')
+        predictor.load_model('Baseline', 'baseline_model.pth')
+        predictor.load_model('Hybrid', 'hybrid_model.pth')
     except FileNotFoundError as e:
         print(f"❌ Error: {e}")
-        print("Please run 'python train.py' first to train the models")
+        print("Please run 'python scripts/train.py' first to train the models")
         return
     
     print()

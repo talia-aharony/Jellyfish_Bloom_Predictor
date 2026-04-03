@@ -1,4 +1,4 @@
-"""Jellyfish forecasting package shims for the APS360 project."""
+"""Jellyfish forecasting package for the APS360 project."""
 
 from .data_loader import load_all_data, load_jellyfish_data, load_integrated_data
 from .models import (
