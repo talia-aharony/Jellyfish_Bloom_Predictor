@@ -28,28 +28,45 @@ Jellyfish_Bloom_Predictor/
 
 ## Quick Start
 
-1. Install dependencies:
+1. Create and activate a virtual environment:
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-2. Train models:
+2. Install dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+3. Train models:
 
 ```bash
 python scripts/train.py
 ```
 
-3. Run prediction example:
+4. Run prediction example:
 
 ```bash
 python scripts/predict.py
 ```
 
-4. Run model evaluation:
+5. Run model evaluation:
 
 ```bash
 python scripts/evaluate.py
+```
+
+## Direct Execution (Also Supported)
+
+These package files can also be run directly:
+
+```bash
+python jellyfish/train.py
+python jellyfish/predict_example.py
+python jellyfish/evaluate_models.py
 ```
 
 ## Imports
