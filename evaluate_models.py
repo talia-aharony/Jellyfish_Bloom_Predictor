@@ -13,6 +13,7 @@ Shows how to evaluate Baseline vs Your Model with comprehensive metrics:
 from predictor_v2 import JellyfishPredictor
 from evaluator import ModelEvaluator
 import pandas as pd
+import numpy as np
 
 
 def main():

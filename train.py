@@ -84,9 +84,11 @@ def create_engineered_features_forecasting(X, lookback=7):
 class Trainer:
     """Training pipeline for all models"""
     
-    def __init__(self, model, device='cpu', learning_rate=LEARNING_RATE):
+    def __init__(self, model, device='cpu', learning_rate=LEARNING_RATE, model_id='default'):
         self.model = model.to(device)
         self.device = device
+        self.model_id = model_id
+        self.best_state_dict = None  # Store best weights in memory
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
         self.criterion = nn.BCELoss()
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -181,12 +183,15 @@ class Trainer:
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 patience_counter = 0
-                torch.save(self.model.state_dict(), 'best_model.pth')
+                # Store best weights in memory (avoid file conflicts)
+                self.best_state_dict = {k: v.clone() for k, v in self.model.state_dict().items()}
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
                     print(f"Early stopping at epoch {epoch+1}")
-                    self.model.load_state_dict(torch.load('best_model.pth'))
+                    # Restore best weights from memory
+                    if self.best_state_dict is not None:
+                        self.model.load_state_dict(self.best_state_dict)
                     break
     
     def test(self, test_loader):
@@ -367,7 +372,7 @@ def train_all_models():
     test_loader_bl = DataLoader(test_dataset_bl, batch_size=BATCH_SIZE, shuffle=False)
     
     baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
-    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=LEARNING_RATE)
+    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=LEARNING_RATE, model_id='baseline')
     
     start_time = time.time()
     baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=NUM_EPOCHS, patience=15)
@@ -396,7 +401,7 @@ def train_all_models():
         print(f"\n{model_name}")
         print("-" * 50)
         
-        trainer = Trainer(model, device=device, learning_rate=LEARNING_RATE)
+        trainer = Trainer(model, device=device, learning_rate=LEARNING_RATE, model_id=model_name.lower())
         start_time = time.time()
         trainer.fit(train_loader, val_loader, epochs=NUM_EPOCHS, patience=15)
         train_time = time.time() - start_time

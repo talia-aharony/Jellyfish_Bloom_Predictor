@@ -16,7 +16,7 @@ def load_all_data():
             for f in files:
                 full_path = os.path.join(path, f)
                 if f.endswith(".txt"):
-                    datasets[folder][f] = pd.read_csv(full_path, sep="\t")
+                    datasets[folder][f] = pd.read_csv(full_path, sep="\t", low_memory=False)
                 elif f.endswith(".csv"):
                     datasets[folder][f] = pd.read_csv(full_path)
 
