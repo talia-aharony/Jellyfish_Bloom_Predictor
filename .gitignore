@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .vscode/
+*.pth
+*_training_history.png
+model_evaluation_report.txt
+model_metrics.csv
