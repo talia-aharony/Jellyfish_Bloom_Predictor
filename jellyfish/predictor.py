@@ -247,11 +247,36 @@ class JellyfishPredictor:
     @staticmethod
     def _feature_indices():
         return {
+            'latitude': 0,
+            'longitude': 1,
             'month': 2,
             'day_of_month': 3,
             'sin_month': 4,
             'cos_month': 5,
+            'distance_from_coast': 6,
+            'species_id': 7,
+            'diameter_cm': 8,
+            'observation_count': 9,
+            'sting': 10,
         }
+
+    @staticmethod
+    def _project_next_from_recent(values, clamp_min=None, clamp_max=None):
+        """Project next value using a linear trend over recent values."""
+        if values.size == 0:
+            return 0.0
+        if values.size == 1:
+            next_val = float(values[-1])
+        else:
+            x = np.arange(values.size, dtype=np.float32)
+            slope, intercept = np.polyfit(x, values.astype(np.float32), 1)
+            next_val = float(slope * values.size + intercept)
+
+        if clamp_min is not None:
+            next_val = max(clamp_min, next_val)
+        if clamp_max is not None:
+            next_val = min(clamp_max, next_val)
+        return next_val
 
     def _build_future_sequence(self, beach_id, forecast_date):
         """Construct a forecast sequence for a future date using latest known beach history.
@@ -259,7 +284,8 @@ class JellyfishPredictor:
         Strategy:
         - Use latest available sequence for this beach from cached metadata
         - Roll sequence forward day-by-day until forecast_date
-        - Carry forward non-calendar features
+        - Update dynamic non-calendar features using recent trend
+        - Keep static geographic features fixed
         - Recompute calendar features (month/day/sin/cos) each rolled day
         """
         metadata = self.data_cache['metadata']
@@ -284,6 +310,23 @@ class JellyfishPredictor:
         for step in range(1, days_ahead + 1):
             target_day = latest_date + timedelta(days=step)
             new_row = seq[-1].copy()
+
+            # Keep geographic/static beach features constant
+            new_row[idx['latitude']] = seq[-1, idx['latitude']]
+            new_row[idx['longitude']] = seq[-1, idx['longitude']]
+            new_row[idx['distance_from_coast']] = seq[-1, idx['distance_from_coast']]
+
+            # Species index behaves like a categorical proxy; keep last known value
+            new_row[idx['species_id']] = seq[-1, idx['species_id']]
+
+            # Dynamic features: project from recent trend
+            recent_diameter = seq[:, idx['diameter_cm']]
+            recent_obs_count = seq[:, idx['observation_count']]
+            recent_sting = seq[:, idx['sting']]
+
+            new_row[idx['diameter_cm']] = self._project_next_from_recent(recent_diameter, clamp_min=0.0)
+            new_row[idx['observation_count']] = self._project_next_from_recent(recent_obs_count, clamp_min=0.0)
+            new_row[idx['sting']] = self._project_next_from_recent(recent_sting, clamp_min=0.0, clamp_max=1.0)
 
             month = float(target_day.month)
             day_of_month = float(target_day.day)
@@ -401,6 +444,7 @@ class JellyfishPredictor:
             'actual': match.iloc[0]['jellyfish_observed'] if (len(match) > 0 and 'jellyfish_observed' in match.columns) else None,
             'extrapolated': used_extrapolation,
             'extrapolated_from_date': extrapolated_from_date,
+            'extrapolation_method': 'seasonal + trend projection' if used_extrapolation else 'historical match',
         }
     
     def predict_multiple(self, predictions_list, model_name):
