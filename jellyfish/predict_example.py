@@ -21,6 +21,7 @@ else:
     from .predictor import JellyfishPredictor
 import pandas as pd
 import numpy as np
+from datetime import date, timedelta
 
 
 def main():
@@ -96,6 +97,18 @@ def main():
     
     # Get unique beaches and dates for examples
     sample_rows = metadata.drop_duplicates(subset=['beach_id']).head(5)
+
+    available_dates = sorted(pd.to_datetime(metadata['forecast_date']).dt.date.unique())
+    target_future_date = date.today() + timedelta(days=1)
+    future_dates = [d for d in available_dates if d >= target_future_date]
+
+    if future_dates:
+        selected_date = future_dates[0]
+        print(f"Targeting future forecast date: {selected_date} (>= tomorrow)")
+    else:
+        selected_date = available_dates[-1]
+        print(f"⚠ No date >= tomorrow in cached data.")
+        print(f"  Falling back to latest available forecast date: {selected_date}")
     
     print(f"Sample beach-date combinations from dataset:")
     for idx, row in sample_rows.iterrows():
@@ -111,8 +124,13 @@ def main():
     print("STEP 5: Single Predictions")
     print("-" * 80)
     
-    # Get first available beach-date combination
-    first_row = sample_rows.iloc[0]
+    # Get first available beach at selected target date
+    date_matches = metadata[metadata['forecast_date'] == selected_date]
+    if date_matches.empty:
+        print("ERROR: No rows found for selected forecast date in metadata")
+        return
+
+    first_row = date_matches.iloc[0]
     beach_id = int(first_row['beach_id'])
     forecast_date = first_row['forecast_date']
     
@@ -152,7 +170,8 @@ def main():
     
     # Create list of beach-date combinations to predict
     predictions_list = []
-    for idx, row in sample_rows.head(5).iterrows():
+    selected_date_rows = metadata[metadata['forecast_date'] == selected_date].drop_duplicates(subset=['beach_id'])
+    for idx, row in selected_date_rows.head(5).iterrows():
         predictions_list.append((int(row['beach_id']), row['forecast_date']))
     
     print(f"\nMaking predictions for {len(predictions_list)} beach-date combinations:")

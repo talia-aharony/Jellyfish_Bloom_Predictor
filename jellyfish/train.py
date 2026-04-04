@@ -35,10 +35,10 @@ else:
     from .data_loader import load_jellyfish_data
     from .models import (
         BaselineLogisticRegression,
-        FeedforwardNet,
-        LSTMNet,
-        GRUNet,
-        Conv1DNet,
+        # FeedforwardNet,
+        # LSTMNet,
+        # GRUNet,
+        # Conv1DNet,
         HybridNet
     )
 
@@ -369,7 +369,7 @@ def train_all_models():
     
     # Baseline
     print("BASELINE: Logistic Regression")
-    print("-" * 50)
+    print("-" * 90)
     
     X_engineered = create_engineered_features_forecasting(X, lookback=7)
     X_eng_tensor = torch.FloatTensor(X_engineered)
@@ -415,7 +415,7 @@ def train_all_models():
     
     for model_name, model in models.items():
         print(f"\n{model_name}")
-        print("-" * 50)
+        print("-" * 90)
         
         trainer = Trainer(model, device=device, learning_rate=LEARNING_RATE, model_id=model_name.lower())
         start_time = time.time()

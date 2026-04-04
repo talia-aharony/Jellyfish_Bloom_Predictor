@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 import os
 from datetime import datetime, timedelta
+import re
+
+try:
+    from .weather import IMSWeatherFetcher
+except ImportError:
+    from weather import IMSWeatherFetcher
 
 # Beach to IMS station mapping
 beach_station_map = {
@@ -26,6 +32,312 @@ beach_station_map = {
     " Ashkelon-Ashdod": "ASHDOD PORT",
     " Gaza-Ashkelon": "ASHQELON PORT"
 }
+
+
+def _extract_numeric_values(text):
+    if text is None:
+        return []
+    matches = re.findall(r"-?\d+(?:\.\d+)?", str(text))
+    return [float(x) for x in matches]
+
+
+def _parse_pubdate_to_date(value):
+    ts = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(ts):
+        ts = pd.to_datetime(value, errors="coerce")
+    if pd.isna(ts):
+        return None
+    return ts.date()
+
+
+CITY_REFERENCE_COORDS = {
+    "ashdod": (31.8044, 34.6553),
+    "haifa": (32.7940, 34.9896),
+    "tel_aviv_coast": (32.0853, 34.7818),
+}
+
+SEA_REGION_REFERENCE_COORDS = {
+    "northern_coast": (32.95, 35.08),
+    "central_coast": (32.10, 34.78),
+    "southern_coast": (31.55, 34.60),
+}
+
+SEA_TO_ALERT_REGION = {
+    "northern_coast": "north",
+    "central_coast": "center",
+    "southern_coast": "south",
+}
+
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    if any(pd.isna(v) for v in [lat1, lon1, lat2, lon2]):
+        return np.nan
+
+    r = 6371.0
+    phi1 = np.radians(float(lat1))
+    phi2 = np.radians(float(lat2))
+    dphi = np.radians(float(lat2) - float(lat1))
+    dlambda = np.radians(float(lon2) - float(lon1))
+
+    a = np.sin(dphi / 2.0) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2.0) ** 2
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    return r * c
+
+
+def build_beach_live_source_map(daily_citizen, available_city_sources=None):
+    """Map each beach to nearest live RSS source locations (city/coast/alert region)."""
+    required = {"beach_id", "beach_name", "decimalLatitude", "decimalLongitude"}
+    if daily_citizen is None or not required.issubset(daily_citizen.columns):
+        return pd.DataFrame(columns=[
+            "beach_id", "beach_name", "decimalLatitude", "decimalLongitude",
+            "city_source", "city_distance_km", "sea_source", "alert_source",
+        ])
+
+    beach_points = (
+        daily_citizen[["beach_id", "beach_name", "decimalLatitude", "decimalLongitude"]]
+        .dropna(subset=["beach_id", "decimalLatitude", "decimalLongitude"])
+        .groupby("beach_id", as_index=False)
+        .agg({
+            "beach_name": "first",
+            "decimalLatitude": "mean",
+            "decimalLongitude": "mean",
+        })
+    )
+
+    city_reference_coords = CITY_REFERENCE_COORDS.copy()
+    if available_city_sources is not None:
+        allowed = set(available_city_sources)
+        filtered = {k: v for k, v in city_reference_coords.items() if k in allowed}
+        if filtered:
+            city_reference_coords = filtered
+
+    mapped_rows = []
+    for _, row in beach_points.iterrows():
+        lat = float(row["decimalLatitude"])
+        lon = float(row["decimalLongitude"])
+
+        city_distances = {
+            city: _haversine_km(lat, lon, coords[0], coords[1])
+            for city, coords in city_reference_coords.items()
+        }
+        city_source = min(city_distances, key=city_distances.get)
+
+        sea_distances = {
+            coast: _haversine_km(lat, lon, coords[0], coords[1])
+            for coast, coords in SEA_REGION_REFERENCE_COORDS.items()
+        }
+        sea_source = min(sea_distances, key=sea_distances.get)
+
+        mapped_rows.append({
+            "beach_id": int(row["beach_id"]),
+            "beach_name": row["beach_name"],
+            "decimalLatitude": lat,
+            "decimalLongitude": lon,
+            "city_source": city_source,
+            "city_distance_km": float(city_distances[city_source]),
+            "sea_source": sea_source,
+            "alert_source": SEA_TO_ALERT_REGION.get(sea_source, "center"),
+        })
+
+    beach_source_map = pd.DataFrame(mapped_rows)
+    if not beach_source_map.empty:
+        print(f"✓ Built nearest-source map for {len(beach_source_map)} beaches")
+
+    return beach_source_map
+
+
+def map_live_rss_features_to_beaches(live_daily, daily_citizen):
+    """Assign live RSS features to each beach-date using nearest source mapping."""
+    if live_daily is None or live_daily.empty or "date" not in live_daily.columns:
+        return pd.DataFrame(columns=["beach_id", "date"])
+
+    available_city_sources = sorted({
+        re.sub(r"^city_", "", c).replace("_tonight_min_temp_c", "")
+        for c in live_daily.columns
+        if c.startswith("city_") and c.endswith("_tonight_min_temp_c")
+    })
+
+    beach_source_map = build_beach_live_source_map(daily_citizen)
+    if beach_source_map.empty:
+        return pd.DataFrame(columns=["beach_id", "date"])
+
+    mapped_frames = []
+    radiation_cols = [c for c in live_daily.columns if c.startswith("radiation_")]
+
+    for _, beach in beach_source_map.iterrows():
+        city_source = beach["city_source"]
+        sea_source = beach["sea_source"]
+        alert_source = beach["alert_source"]
+
+        city_feature_source = city_source
+        if city_feature_source not in available_city_sources and available_city_sources:
+            ref_lat, ref_lon = CITY_REFERENCE_COORDS.get(city_source, (np.nan, np.nan))
+            nearest_available = min(
+                available_city_sources,
+                key=lambda c: _haversine_km(
+                    ref_lat,
+                    ref_lon,
+                    CITY_REFERENCE_COORDS.get(c, (np.nan, np.nan))[0],
+                    CITY_REFERENCE_COORDS.get(c, (np.nan, np.nan))[1],
+                ),
+            )
+            city_feature_source = nearest_available
+
+        beach_daily = live_daily[["date"]].copy()
+        beach_daily["beach_id"] = int(beach["beach_id"])
+
+        beach_daily["rss_city_source"] = city_source
+        beach_daily["rss_city_feature_source"] = city_feature_source
+        beach_daily["rss_city_distance_km"] = beach["city_distance_km"]
+        beach_daily["rss_sea_source"] = sea_source
+        beach_daily["rss_alert_source"] = alert_source
+
+        beach_daily["rss_city_tonight_min_temp_c"] = live_daily.get(f"city_{city_feature_source}_tonight_min_temp_c")
+        beach_daily["rss_city_max_temp_c"] = live_daily.get(f"city_{city_feature_source}_max_temp_c")
+        beach_daily["rss_city_min_temp_c"] = live_daily.get(f"city_{city_feature_source}_min_temp_c")
+
+        beach_daily["rss_sea_temperature_c"] = live_daily.get(f"sea_{sea_source}_temperature_c")
+        beach_daily["rss_sea_wind_speed_kmh_min"] = live_daily.get(f"sea_{sea_source}_wind_speed_kmh_min")
+        beach_daily["rss_sea_wind_speed_kmh_max"] = live_daily.get(f"sea_{sea_source}_wind_speed_kmh_max")
+        beach_daily["rss_sea_waves_height_cm_min"] = live_daily.get(f"sea_{sea_source}_waves_height_cm_min")
+        beach_daily["rss_sea_waves_height_cm_max"] = live_daily.get(f"sea_{sea_source}_waves_height_cm_max")
+
+        beach_daily["rss_flood_alert_count"] = live_daily.get(f"flood_alert_{alert_source}_count")
+        beach_daily["rss_flood_alert_active"] = live_daily.get(f"flood_alert_{alert_source}_active")
+
+        for col in radiation_cols:
+            beach_daily[f"rss_{col}"] = live_daily[col]
+
+        mapped_frames.append(beach_daily)
+
+    mapped_live = pd.concat(mapped_frames, ignore_index=True)
+    print(f"✓ Mapped live RSS features to beach-date rows: {len(mapped_live)}")
+    return mapped_live
+
+
+def load_live_ims_xml_features(region="central_coast"):
+    """Load live IMS XML forecasts and aggregate them into daily features.
+
+    Returns:
+        DataFrame with one row per date and globally aggregated weather/sea/radiation
+        features from IMS XML feeds.
+    """
+    print("\n🌐 Loading live IMS RSS feeds...")
+
+    fetcher = IMSWeatherFetcher(region=region)
+    payload = fetcher.fetch_enriched_forecast()
+
+    city_rows = []
+    city_payload = payload.get("city_rss", {}) if payload else {}
+    for city_name, city_data in city_payload.items():
+        if not city_data:
+            continue
+
+        base_date = _parse_pubdate_to_date(city_data.get("pub_date"))
+        city_rows.append({
+            "date": base_date,
+            f"city_{city_name}_tonight_min_temp_c": pd.to_numeric(city_data.get("tonight_min_temp_c"), errors="coerce"),
+        })
+
+        for fc in city_data.get("daily_forecasts", []):
+            ddmm = fc.get("date_ddmm")
+            if not ddmm or base_date is None:
+                continue
+            try:
+                day, month = ddmm.split("/")
+                year = base_date.year
+                forecast_date = pd.Timestamp(year=year, month=int(month), day=int(day)).date()
+            except Exception:
+                continue
+
+            city_rows.append({
+                "date": forecast_date,
+                f"city_{city_name}_max_temp_c": pd.to_numeric(fc.get("max_temp_c"), errors="coerce"),
+                f"city_{city_name}_min_temp_c": pd.to_numeric(fc.get("min_temp_c"), errors="coerce"),
+            })
+
+    city_daily = pd.DataFrame(city_rows)
+    if not city_daily.empty:
+        value_cols = [col for col in city_daily.columns if col != "date"]
+        city_daily = city_daily.groupby("date", as_index=False)[value_cols].mean(numeric_only=True)
+
+    sea_rows = []
+    sea_payload = payload.get("sea_rss", {}) if payload else {}
+    for coast_region, sea_data in sea_payload.items():
+        if not sea_data:
+            continue
+
+        for fc in sea_data.get("forecasts", []):
+            dt = pd.to_datetime(fc.get("start_time"), errors="coerce")
+            if pd.isna(dt):
+                dt = pd.to_datetime(sea_data.get("pub_date"), errors="coerce")
+            if pd.isna(dt):
+                continue
+
+            sea_rows.append({
+                "date": dt.date(),
+                f"sea_{coast_region}_temperature_c": pd.to_numeric(fc.get("temperature_c"), errors="coerce"),
+                f"sea_{coast_region}_wind_speed_kmh_min": pd.to_numeric(fc.get("wind_speed_kmh_min"), errors="coerce"),
+                f"sea_{coast_region}_wind_speed_kmh_max": pd.to_numeric(fc.get("wind_speed_kmh_max"), errors="coerce"),
+                f"sea_{coast_region}_waves_height_cm_min": pd.to_numeric(fc.get("waves_height_cm_min"), errors="coerce"),
+                f"sea_{coast_region}_waves_height_cm_max": pd.to_numeric(fc.get("waves_height_cm_max"), errors="coerce"),
+            })
+
+    sea_daily = pd.DataFrame(sea_rows)
+    if not sea_daily.empty:
+        value_cols = [col for col in sea_daily.columns if col != "date"]
+        sea_daily = sea_daily.groupby("date", as_index=False)[value_cols].mean(numeric_only=True)
+
+    rad_rows = []
+    rad_payload = payload.get("radiation_rss") if payload else None
+    if rad_payload:
+        rad_date = _parse_pubdate_to_date(rad_payload.get("pub_date"))
+        rad_rows.append({
+            "date": rad_date,
+            "radiation_city_mentions": pd.to_numeric(rad_payload.get("city_mentions"), errors="coerce"),
+            "radiation_low_mentions": pd.to_numeric(rad_payload.get("low_mentions"), errors="coerce"),
+            "radiation_medium_mentions": pd.to_numeric(rad_payload.get("medium_mentions"), errors="coerce"),
+            "radiation_high_mentions": pd.to_numeric(rad_payload.get("high_mentions"), errors="coerce"),
+            "radiation_very_high_mentions": pd.to_numeric(rad_payload.get("very_high_mentions"), errors="coerce"),
+        })
+
+    rad_daily = pd.DataFrame(rad_rows)
+    if not rad_daily.empty:
+        rad_daily = rad_daily.dropna(subset=["date"])
+
+    alert_rows = []
+    alerts_payload = payload.get("alerts_rss", {}) if payload else {}
+    for alert_region, alert_data in alerts_payload.items():
+        if not alert_data:
+            continue
+        alert_date = _parse_pubdate_to_date(alert_data.get("last_build_date"))
+        alert_rows.append({
+            "date": alert_date,
+            f"flood_alert_{alert_region}_count": pd.to_numeric(alert_data.get("item_count"), errors="coerce"),
+            f"flood_alert_{alert_region}_active": int(bool(alert_data.get("active"))),
+        })
+
+    alert_daily = pd.DataFrame(alert_rows)
+    if not alert_daily.empty:
+        value_cols = [col for col in alert_daily.columns if col != "date"]
+        alert_daily = alert_daily.groupby("date", as_index=False)[value_cols].mean(numeric_only=True)
+
+    daily_frames = []
+    for frame in [city_daily, sea_daily, rad_daily, alert_daily]:
+        if frame is not None and not frame.empty and "date" in frame.columns:
+            frame = frame.dropna(subset=["date"])
+            daily_frames.append(frame)
+
+    if not daily_frames:
+        print("⚠️  Live RSS feeds unavailable or empty; continuing without live RSS features")
+        return pd.DataFrame(columns=["date"])
+
+    live_daily = daily_frames[0]
+    for frame in daily_frames[1:]:
+        live_daily = live_daily.merge(frame, on="date", how="outer")
+
+    print(f"✓ Live RSS daily features loaded: {len(live_daily)} date rows")
+    return live_daily
 
 
 def load_all_data():
@@ -547,7 +859,7 @@ def create_feature_sequences(merged_data, lookback_days=7, forecast_days=1):
     return X, y, metadata, all_features
 
 
-def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1):
+def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1, include_live_xml=True):
     """
     Master function to load and integrate all data with SYMMETRIC structure
     
@@ -581,6 +893,14 @@ def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1):
         return None
     
     daily_weather = aggregate_ims_by_beach_date(weather_df, beach_station_map, daily_citizen)
+
+    if include_live_xml:
+        live_xml_daily = load_live_ims_xml_features(region="central_coast")
+        if not live_xml_daily.empty and 'date' in live_xml_daily.columns:
+            live_mapped = map_live_rss_features_to_beaches(live_xml_daily, daily_citizen)
+            if not live_mapped.empty:
+                daily_weather = daily_weather.merge(live_mapped, on=['beach_id', 'date'], how='left')
+                print(f"✓ Daily weather enriched with nearest-mapped live RSS features")
     
     # Merge on (beach_id, date)
     merged = merge_citizen_and_weather(daily_citizen, daily_weather)
@@ -617,7 +937,8 @@ if __name__ == "__main__":
     results = load_integrated_data(
         weather_csv_path=weather_path,
         lookback_days=7,
-        forecast_days=1
+        forecast_days=1,
+        include_live_xml=True,
     )
     
     if results:
