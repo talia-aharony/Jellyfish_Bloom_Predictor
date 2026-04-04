@@ -191,30 +191,26 @@ def main(days_ahead=None, beach_id=None):
     print()
     
     # =========================================================================
-    # STEP 6: Compare All Models
+    # STEP 6: Hybrid Model Comparison View
     # =========================================================================
     
-    print("STEP 6: Compare All Loaded Models")
+    print("STEP 6: Hybrid Model Details")
     print("-" * 80)
     
     predictor.compare_predictions(beach_id=beach_id, forecast_date=forecast_date)
     
     # =========================================================================
-    # STEP 7: Make Multiple Predictions
+    # STEP 7: Final Prediction Table
     # =========================================================================
     
-    print("STEP 7: Multiple Predictions")
+    print("STEP 7: Prediction Summary")
     print("-" * 80)
     
     # Create list of beach-date combinations to predict
     predictions_list = []
-    if beach_id is not None:
-        predictions_list.append((beach_id, selected_date))
-    else:
-        for idx, row in sample_rows.head(5).iterrows():
-            predictions_list.append((int(row['beach_id']), selected_date))
+    predictions_list.append((beach_id, selected_date))
     
-    print(f"\nMaking predictions for {len(predictions_list)} beach-date combinations:")
+    print(f"\nGenerating summary for {len(predictions_list)} beach-date combination:")
     print()
     
     results = predictor.predict_multiple(
@@ -272,7 +268,7 @@ def main(days_ahead=None, beach_id=None):
                 model_predictions.append(pct)
                 pct_display = f"{pct:.2f}%"
                 print(f"{model_name:<20} {prob:<15.4f} {pct_display:<15}")
-        
+       
         if probabilities:
             ensemble_prob = np.mean(probabilities)
             ensemble_pct = ensemble_prob * 100
@@ -300,8 +296,8 @@ def main(days_ahead=None, beach_id=None):
     print("=" * 80)
     print()
     print(f"✓ Successfully demonstrated prediction system")
-    print(f"✓ Loaded {len(loaded_models)} models")
-    print(f"✓ Made predictions for {len(predictions_list)} beach-date combinations")
+    print(f"✓ Loaded {len(loaded_models)} model(s)")
+    print(f"✓ Made predictions for {len(predictions_list)} beach-date combination(s)")
     print()
     print("Next steps:")
     print("  1. Modify this script to predict for your dates of interest")

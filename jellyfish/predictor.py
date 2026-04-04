@@ -528,9 +528,13 @@ class JellyfishPredictor:
                 print(f"Error: {list(results.values())[0]['error']}")
             return
         
+        single_model_mode = len(valid_results) == 1
         first_result = list(valid_results.values())[0]
         print(f"\n" + "=" * 80)
-        print(f"JELLYFISH FORECAST COMPARISON")
+        if single_model_mode:
+            print(f"JELLYFISH FORECAST RESULT")
+        else:
+            print(f"JELLYFISH FORECAST COMPARISON")
         print(f"=" * 80)
         print(f"Beach ID:        {beach_id}")
         print(f"Beach Name:      {first_result['beach_name']}")
@@ -555,15 +559,16 @@ class JellyfishPredictor:
             pct_display = f"{pct:.2f}%"
             
             print(f"{model_name:<20} {prob:<15.4f} {pct_display:<15} {pred:<15} {conf:<15}")
-        
-        # Calculate ensemble prediction (average)
-        avg_prob = np.mean([v['probability'] for v in valid_results.values()])
-        avg_percentage = avg_prob * 100
-        ensemble_pred = 'Yes' if avg_prob > 0.5 else 'No'
-        avg_percentage_display = f"{avg_percentage:.2f}%"
-        
-        print("-" * 80)
-        print(f"{'Ensemble':<20} {avg_prob:<15.4f} {avg_percentage_display:<15} {ensemble_pred:<15}")
+
+        if not single_model_mode:
+            # Calculate ensemble prediction (average)
+            avg_prob = np.mean([v['probability'] for v in valid_results.values()])
+            avg_percentage = avg_prob * 100
+            ensemble_pred = 'Yes' if avg_prob > 0.5 else 'No'
+            avg_percentage_display = f"{avg_percentage:.2f}%"
+
+            print("-" * 80)
+            print(f"{'Ensemble':<20} {avg_prob:<15.4f} {avg_percentage_display:<15} {ensemble_pred:<15}")
         print("=" * 80)
         print()
 
