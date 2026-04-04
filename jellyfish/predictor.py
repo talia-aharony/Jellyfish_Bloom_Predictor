@@ -243,6 +243,61 @@ class JellyfishPredictor:
             probability = output.cpu().item()
         
         return probability
+
+    @staticmethod
+    def _feature_indices():
+        return {
+            'month': 2,
+            'day_of_month': 3,
+            'sin_month': 4,
+            'cos_month': 5,
+        }
+
+    def _build_future_sequence(self, beach_id, forecast_date):
+        """Construct a forecast sequence for a future date using latest known beach history.
+
+        Strategy:
+        - Use latest available sequence for this beach from cached metadata
+        - Roll sequence forward day-by-day until forecast_date
+        - Carry forward non-calendar features
+        - Recompute calendar features (month/day/sin/cos) each rolled day
+        """
+        metadata = self.data_cache['metadata']
+        beach_rows = metadata[metadata['beach_id'] == beach_id].copy()
+
+        if beach_rows.empty:
+            return None, None, None
+
+        beach_rows = beach_rows.sort_values('forecast_date').reset_index()
+        latest_row = beach_rows.iloc[-1]
+        latest_idx = int(latest_row['index'])
+        latest_date = latest_row['forecast_date']
+        beach_name = latest_row['beach_name']
+
+        if forecast_date <= latest_date:
+            return None, beach_name, latest_date
+
+        seq = self.data_cache['X'][latest_idx].copy().astype(np.float32)
+        days_ahead = (forecast_date - latest_date).days
+
+        idx = self._feature_indices()
+        for step in range(1, days_ahead + 1):
+            target_day = latest_date + timedelta(days=step)
+            new_row = seq[-1].copy()
+
+            month = float(target_day.month)
+            day_of_month = float(target_day.day)
+            sin_month = float(np.sin(2 * np.pi * month / 12.0))
+            cos_month = float(np.cos(2 * np.pi * month / 12.0))
+
+            new_row[idx['month']] = month
+            new_row[idx['day_of_month']] = day_of_month
+            new_row[idx['sin_month']] = sin_month
+            new_row[idx['cos_month']] = cos_month
+
+            seq = np.vstack([seq[1:], new_row]).astype(np.float32)
+
+        return seq, beach_name, latest_date
     
     def predict_for_beach_date(self, beach_id, forecast_date, model_name):
         """Make prediction for a specific beach and date
@@ -278,23 +333,30 @@ class JellyfishPredictor:
             (metadata['beach_id'] == beach_id) &
             (metadata['forecast_date'] == forecast_date)
         ]
-        
+
+        used_extrapolation = False
+        extrapolated_from_date = None
+
         if len(match) == 0:
-            return {
-                'beach_id': beach_id,
-                'beach_name': 'Unknown',
-                'forecast_date': forecast_date,
-                'probability': None,
-                'percentage': None,
-                'prediction': 'No data',
-                'confidence': 'N/A',
-                'error': f'No data found for beach {beach_id} on {forecast_date}'
-            }
-        
-        # Get the corresponding sequence
-        match_idx = match.index[0]
-        X_sequence = self.data_cache['X'][match_idx]  # (7, 11)
-        beach_name = match.iloc[0]['beach_name']
+            X_sequence, beach_name, latest_date = self._build_future_sequence(beach_id, forecast_date)
+            if X_sequence is None:
+                return {
+                    'beach_id': beach_id,
+                    'beach_name': beach_name if beach_name is not None else 'Unknown',
+                    'forecast_date': forecast_date,
+                    'probability': None,
+                    'percentage': None,
+                    'prediction': 'No data',
+                    'confidence': 'N/A',
+                    'error': f'No data found for beach {beach_id} on {forecast_date}'
+                }
+            used_extrapolation = True
+            extrapolated_from_date = latest_date
+        else:
+            # Get the corresponding sequence
+            match_idx = match.index[0]
+            X_sequence = self.data_cache['X'][match_idx]  # (lookback, n_features)
+            beach_name = match.iloc[0]['beach_name']
         
         # Normalize if using neural network
         if model_name != 'Baseline':
@@ -306,7 +368,7 @@ class JellyfishPredictor:
         else:
             # Use baseline with engineered features
             X_eng = create_engineered_features_forecasting(
-                self.data_cache['X'][match_idx:match_idx+1], 
+                X_sequence[np.newaxis, ...],
                 lookback=self.normalization_stats['lookback_days']
             )
             X_eng_tensor = torch.FloatTensor(X_eng[0])
@@ -336,7 +398,9 @@ class JellyfishPredictor:
             'percentage': percentage,
             'prediction': prediction,
             'confidence': confidence,
-            'actual': match.iloc[0]['jellyfish_observed'] if 'jellyfish_observed' in match.columns else None
+            'actual': match.iloc[0]['jellyfish_observed'] if (len(match) > 0 and 'jellyfish_observed' in match.columns) else None,
+            'extrapolated': used_extrapolation,
+            'extrapolated_from_date': extrapolated_from_date,
         }
     
     def predict_multiple(self, predictions_list, model_name):
