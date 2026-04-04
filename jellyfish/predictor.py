@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from datetime import timedelta
+from datetime import timedelta, date
 from .data_loader import load_jellyfish_data
 from .models import (
     BaselineLogisticRegression,
@@ -446,6 +446,35 @@ class JellyfishPredictor:
             'extrapolated_from_date': extrapolated_from_date,
             'extrapolation_method': 'seasonal + trend projection' if used_extrapolation else 'historical match',
         }
+
+    def predict_days_ahead(self, beach_id, days_ahead, model_name, start_date=None):
+        """Predict for beach_id at N days ahead from start_date (or today).
+
+        Args:
+            beach_id: Beach ID (integer)
+            days_ahead: Non-negative integer number of days in the future
+            model_name: Loaded model name
+            start_date: Optional date (datetime.date or 'YYYY-MM-DD'), defaults to today
+
+        Returns:
+            dict: Same schema as predict_for_beach_date
+        """
+        if days_ahead < 0:
+            raise ValueError("days_ahead must be non-negative")
+
+        if start_date is None:
+            base_date = date.today()
+        elif isinstance(start_date, str):
+            from datetime import datetime
+            base_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        else:
+            base_date = start_date
+
+        forecast_date = base_date + timedelta(days=int(days_ahead))
+        result = self.predict_for_beach_date(beach_id, forecast_date, model_name)
+        result['days_ahead'] = int(days_ahead)
+        result['base_date'] = base_date
+        return result
     
     def predict_multiple(self, predictions_list, model_name):
         """Make multiple predictions
@@ -506,7 +535,11 @@ class JellyfishPredictor:
         print(f"Beach ID:        {beach_id}")
         print(f"Beach Name:      {first_result['beach_name']}")
         print(f"Forecast Date:   {forecast_date}")
-        print(f"Actual Outcome:  {'Jellyfish Present' if first_result.get('actual') == 1 else 'No Jellyfish'}")
+        if first_result.get('extrapolated') or first_result.get('actual') is None:
+            actual_outcome = 'Unknown (future forecast)'
+        else:
+            actual_outcome = 'Jellyfish Present' if first_result.get('actual') == 1 else 'No Jellyfish'
+        print(f"Actual Outcome:  {actual_outcome}")
         print(f"=" * 80)
         print()
         

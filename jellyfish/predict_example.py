@@ -11,6 +11,7 @@ This script demonstrates how to:
 
 import os
 import sys
+import argparse
 
 if __package__ in (None, ""):
     ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -24,7 +25,51 @@ import numpy as np
 from datetime import date, timedelta
 
 
-def main():
+def get_user_inputs(metadata):
+    """Get beach and days-ahead inputs from user"""
+    
+    # Display available beaches
+    unique_beaches = metadata.drop_duplicates(subset=['beach_id']).sort_values('beach_id')
+    
+    print("\n" + "=" * 80)
+    print("AVAILABLE BEACHES")
+    print("=" * 80)
+    print(f"{'Beach ID':<12} {'Beach Name':<50}")
+    print("-" * 80)
+    
+    for idx, row in unique_beaches.iterrows():
+        beach_id_display = int(row['beach_id'])
+        beach_name_display = str(row['beach_name'])
+        print(f"{beach_id_display:<12} {beach_name_display:<50}")
+    
+    print()
+    
+    # Get beach ID from user
+    while True:
+        try:
+            beach_id = int(input("Enter Beach ID (1-20): "))
+            if beach_id in unique_beaches['beach_id'].values:
+                break
+            else:
+                print(f"❌ Beach ID {beach_id} not found. Please try again.")
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    # Get days ahead from user
+    while True:
+        try:
+            days_ahead = int(input("Enter days ahead to forecast (1-365): "))
+            if 1 <= days_ahead <= 365:
+                break
+            else:
+                print("❌ Please enter a number between 1 and 365.")
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    return beach_id, days_ahead
+
+
+def main(days_ahead=None, beach_id=None):
     """Main prediction example"""
     
     print("=" * 80)
@@ -90,22 +135,31 @@ def main():
     # STEP 4: Get Sample Data to Predict
     # =========================================================================
     
-    print("STEP 4: Get Sample Data")
+    print("STEP 4: Get User Input")
     print("-" * 80)
     
     metadata = predictor.data_cache['metadata']
     
-    # Get unique beaches and dates for examples
-    sample_rows = metadata.drop_duplicates(subset=['beach_id']).head(5)
-
-    selected_date = date.today() + timedelta(days=1)
-    print(f"Targeting future forecast date: {selected_date} (tomorrow)")
+    # Get user inputs if not provided via command line
+    if beach_id is None or days_ahead is None:
+        beach_id, days_ahead = get_user_inputs(metadata)
     
-    print(f"Sample beach-date combinations from dataset:")
-    for idx, row in sample_rows.iterrows():
-        beach_id_display = int(row['beach_id'])
-        beach_name_display = str(row['beach_name'])
-        print(f"  - Beach {beach_id_display:2d} ({beach_name_display:20s}) on {row['forecast_date']}")
+    beach_id = int(beach_id)
+    days_ahead = int(days_ahead)
+    
+    if days_ahead < 0:
+        raise ValueError("days_ahead must be non-negative")
+    
+    beach_matches = metadata[metadata['beach_id'] == beach_id]
+    if beach_matches.empty:
+        print(f"❌ ERROR: beach_id {beach_id} not found in dataset metadata")
+        return
+    
+    beach_name = str(beach_matches.iloc[0]['beach_name'])
+
+    selected_date = date.today() + timedelta(days=days_ahead)
+    print(f"\n✓ Selected Beach {beach_id}: {beach_name}")
+    print(f"✓ Forecast date: {selected_date} ({days_ahead} days ahead)")
     print()
     
     # =========================================================================
@@ -114,20 +168,16 @@ def main():
     
     print("STEP 5: Single Predictions")
     print("-" * 80)
-    
-    # Choose first available beach and predict for tomorrow (uses extrapolation if needed)
-    first_row = sample_rows.iloc[0]
-    beach_id = int(first_row['beach_id'])
     forecast_date = selected_date
     
-    print(f"\nPredicting for Beach {beach_id} on {forecast_date}:")
+    print(f"\nPredicting for Beach {beach_id} ({beach_name}) on {forecast_date}:")
     print()
     
     for model_name in loaded_models[:3]:  # Show first 3 models
-        result = predictor.predict_for_beach_date(
+        result = predictor.predict_days_ahead(
             beach_id=beach_id,
-            forecast_date=forecast_date,
-            model_name=model_name
+            days_ahead=days_ahead,
+            model_name=model_name,
         )
         
         if 'error' in result:
@@ -158,8 +208,11 @@ def main():
     
     # Create list of beach-date combinations to predict
     predictions_list = []
-    for idx, row in sample_rows.head(5).iterrows():
-        predictions_list.append((int(row['beach_id']), selected_date))
+    if beach_id is not None:
+        predictions_list.append((beach_id, selected_date))
+    else:
+        for idx, row in sample_rows.head(5).iterrows():
+            predictions_list.append((int(row['beach_id']), selected_date))
     
     print(f"\nMaking predictions for {len(predictions_list)} beach-date combinations:")
     print()
@@ -262,4 +315,18 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Run jellyfish prediction example")
+    parser.add_argument(
+        "--days-ahead",
+        type=int,
+        default=None,
+        help="Forecast horizon in days from today (interactive if not provided)",
+    )
+    parser.add_argument(
+        "--beach-id",
+        type=int,
+        default=None,
+        help="Beach ID to target for prediction (interactive if not provided)",
+    )
+    args = parser.parse_args()
+    main(days_ahead=args.days_ahead, beach_id=args.beach_id)
