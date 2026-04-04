@@ -7,6 +7,7 @@ Saves trained model weights for later use in prediction.
 
 import numpy as np
 import time
+import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,6 +16,8 @@ import matplotlib.pyplot as plt
 import warnings
 import os
 import sys
+import argparse
+from datetime import datetime
 
 warnings.filterwarnings('ignore')
 
@@ -35,10 +38,10 @@ else:
     from .data_loader import load_jellyfish_data
     from .models import (
         BaselineLogisticRegression,
-        # FeedforwardNet,
-        # LSTMNet,
-        # GRUNet,
-        # Conv1DNet,
+        FeedforwardNet,
+        LSTMNet,
+        GRUNet,
+        Conv1DNet,
         HybridNet
     )
 
@@ -47,6 +50,31 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 DROPOUT_PROB = 0.3
 NUM_EPOCHS = 100
+
+
+def save_training_report(results, config, output_path):
+    """Save training configuration and metrics to JSON for experiment tracking."""
+    serializable_results = {}
+    for model_name, metrics in results.items():
+        serializable_results[model_name] = {
+            'accuracy': float(metrics['accuracy']),
+            'precision': float(metrics['precision']),
+            'recall': float(metrics['recall']),
+            'f1': float(metrics['f1']),
+            'auc': float(metrics['auc']),
+            'confusion_matrix': metrics['confusion_matrix'].tolist(),
+        }
+
+    payload = {
+        'timestamp': datetime.now().isoformat(timespec='seconds'),
+        'config': config,
+        'results': serializable_results,
+    }
+
+    with open(output_path, 'w') as f:
+        json.dump(payload, f, indent=2)
+
+    print(f"✓ Saved training report: {output_path}")
 
 
 def create_engineered_features_forecasting(X, lookback=7):
@@ -308,13 +336,35 @@ def plot_training_history(trainer, model_name='Model'):
     plt.close()
 
 
-def train_all_models():
+def train_all_models(
+    batch_size=BATCH_SIZE,
+    learning_rate=LEARNING_RATE,
+    dropout_prob=DROPOUT_PROB,
+    num_epochs=NUM_EPOCHS,
+    patience=15,
+    hybrid_hidden_dim=96,
+    report_path='training_report_latest.json',
+):
     """Main training function"""
     print("=" * 100)
     print("JELLYFISH FORECASTING - TRAINING")
     print("=" * 100)
     print()
     
+    config = {
+        'batch_size': int(batch_size),
+        'learning_rate': float(learning_rate),
+        'dropout_prob': float(dropout_prob),
+        'num_epochs': int(num_epochs),
+        'patience': int(patience),
+        'hybrid_hidden_dim': int(hybrid_hidden_dim),
+    }
+
+    print("Training configuration:")
+    for key, value in config.items():
+        print(f"  - {key}: {value}")
+    print()
+
     # Load data
     print("1. LOADING DATA")
     print("-" * 100)
@@ -351,9 +401,9 @@ def train_all_models():
         generator=torch.Generator().manual_seed(42)
     )
     
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     print(f"✓ Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
     print()
@@ -383,15 +433,15 @@ def train_all_models():
         generator=torch.Generator().manual_seed(42)
     )
     
-    train_loader_bl = DataLoader(train_dataset_bl, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader_bl = DataLoader(val_dataset_bl, batch_size=BATCH_SIZE, shuffle=False)
-    test_loader_bl = DataLoader(test_dataset_bl, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader_bl = DataLoader(train_dataset_bl, batch_size=batch_size, shuffle=True)
+    val_loader_bl = DataLoader(val_dataset_bl, batch_size=batch_size, shuffle=False)
+    test_loader_bl = DataLoader(test_dataset_bl, batch_size=batch_size, shuffle=False)
     
     baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
-    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=LEARNING_RATE, model_id='baseline')
+    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=learning_rate, model_id='baseline')
     
     start_time = time.time()
-    baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=NUM_EPOCHS, patience=15)
+    baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=num_epochs, patience=patience)
     baseline_time = time.time() - start_time
     
     baseline_metrics = baseline_trainer.test(test_loader_bl)
@@ -406,20 +456,20 @@ def train_all_models():
     
     # Neural networks
     models = {
-        'Feedforward': FeedforwardNet(input_dim=7*11),
-        'LSTM': LSTMNet(input_dim=11),
-        'GRU': GRUNet(input_dim=11),
-        'Conv1D': Conv1DNet(input_dim=11),
-        'Hybrid': HybridNet(input_dim=11)
+        'Feedforward': FeedforwardNet(input_dim=7*11, dropout_prob=dropout_prob),
+        'LSTM': LSTMNet(input_dim=11, dropout_prob=dropout_prob),
+        'GRU': GRUNet(input_dim=11, dropout_prob=dropout_prob),
+        'Conv1D': Conv1DNet(input_dim=11, dropout_prob=dropout_prob),
+        'Hybrid': HybridNet(input_dim=11, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob)
     }
     
     for model_name, model in models.items():
         print(f"\n{model_name}")
         print("-" * 90)
         
-        trainer = Trainer(model, device=device, learning_rate=LEARNING_RATE, model_id=model_name.lower())
+        trainer = Trainer(model, device=device, learning_rate=learning_rate, model_id=model_name.lower())
         start_time = time.time()
-        trainer.fit(train_loader, val_loader, epochs=NUM_EPOCHS, patience=15)
+        trainer.fit(train_loader, val_loader, epochs=num_epochs, patience=patience)
         train_time = time.time() - start_time
         
         test_metrics = trainer.test(test_loader)
@@ -453,6 +503,27 @@ def train_all_models():
     print("  - hybrid_model.pth")
     print("=" * 100)
 
+    save_training_report(results, config, report_path)
+
 
 if __name__ == '__main__':
-    train_all_models()
+    parser = argparse.ArgumentParser(description='Train jellyfish forecasting models with tunable hyperparameters')
+    parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help=f'Batch size (default: {BATCH_SIZE})')
+    parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help=f'Learning rate (default: {LEARNING_RATE})')
+    parser.add_argument('--dropout-prob', type=float, default=DROPOUT_PROB, help=f'Dropout probability (default: {DROPOUT_PROB})')
+    parser.add_argument('--num-epochs', type=int, default=NUM_EPOCHS, help=f'Number of epochs (default: {NUM_EPOCHS})')
+    parser.add_argument('--patience', type=int, default=15, help='Early stopping patience (default: 15)')
+    parser.add_argument('--hybrid-hidden-dim', type=int, default=96, help='Hybrid model hidden dimension (default: 96)')
+    parser.add_argument('--report-path', type=str, default='training_report_latest.json', help='Output JSON path for training report')
+
+    args = parser.parse_args()
+
+    train_all_models(
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        dropout_prob=args.dropout_prob,
+        num_epochs=args.num_epochs,
+        patience=args.patience,
+        hybrid_hidden_dim=args.hybrid_hidden_dim,
+        report_path=args.report_path,
+    )

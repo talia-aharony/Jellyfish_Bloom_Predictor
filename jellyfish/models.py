@@ -233,57 +233,110 @@ class Conv1DNet(nn.Module):
 
 
 class HybridNet(nn.Module):
-    """Hybrid CNN + LSTM for Temporal Forecasting
-    
-    Combines CNN feature extraction with LSTM sequence modeling:
-    - CNN extracts local temporal patterns across features
-    - LSTM captures long-range temporal dependencies
-    
+    """Enhanced Hybrid CNN + BiLSTM + Attention for Temporal Forecasting.
+
+    Architecture:
+    - Multi-stage temporal CNN with residual shortcut and dilation
+    - 2-layer bidirectional LSTM for richer sequence modeling
+    - Multi-head self-attention over LSTM outputs
+    - Attentive pooling + final time-step fusion
+    - Deeper MLP prediction head
+
     Input: (batch_size, 7 days, 11 features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
-    
-    def __init__(self, input_dim, hidden_dim=64, dropout_prob=0.3):
+
+    def __init__(self, input_dim, hidden_dim=96, dropout_prob=0.35):
         super(HybridNet, self).__init__()
-        
-        # CNN: Extract temporal patterns from each feature
-        self.conv1 = nn.Conv1d(input_dim, hidden_dim, kernel_size=3, padding=1)
-        self.bn_conv = nn.BatchNorm1d(hidden_dim)
-        self.dropout_conv = nn.Dropout(p=dropout_prob)
-        
-        # LSTM: Model sequence of extracted features
+
+        # CNN encoder
+        self.cnn_in = nn.Sequential(
+            nn.Conv1d(input_dim, hidden_dim, kernel_size=3, padding=1),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(p=dropout_prob),
+        )
+
+        self.cnn_block_2 = nn.Sequential(
+            nn.Conv1d(hidden_dim, hidden_dim, kernel_size=3, padding=1),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(p=dropout_prob),
+        )
+
+        self.cnn_block_3 = nn.Sequential(
+            nn.Conv1d(hidden_dim, hidden_dim, kernel_size=3, padding=2, dilation=2),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(p=dropout_prob),
+        )
+
+        self.residual_proj = nn.Conv1d(input_dim, hidden_dim, kernel_size=1)
+
+        # BiLSTM sequence model
         self.lstm = nn.LSTM(
             input_size=hidden_dim,
             hidden_size=hidden_dim,
-            num_layers=1,
-            batch_first=True
+            num_layers=2,
+            dropout=dropout_prob,
+            batch_first=True,
+            bidirectional=True,
         )
-        
-        # Dense: Final prediction
-        self.fc1 = nn.Linear(hidden_dim, 32)
-        self.dropout_fc = nn.Dropout(p=dropout_prob)
-        self.fc2 = nn.Linear(32, 1)
-    
+
+        lstm_out_dim = hidden_dim * 2
+
+        # Self-attention on temporal outputs
+        self.attn = nn.MultiheadAttention(
+            embed_dim=lstm_out_dim,
+            num_heads=4,
+            dropout=dropout_prob,
+            batch_first=True,
+        )
+
+        # Attention pooling weights
+        self.pool_score = nn.Linear(lstm_out_dim, 1)
+
+        # Deeper prediction head
+        self.head = nn.Sequential(
+            nn.Linear(lstm_out_dim * 2, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(p=dropout_prob),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.LayerNorm(hidden_dim // 2),
+            nn.GELU(),
+            nn.Dropout(p=dropout_prob),
+            nn.Linear(hidden_dim // 2, 1),
+        )
+
     def forward(self, x):
         # x shape: (batch_size, 7, 11)
-        x = x.transpose(1, 2)  # (batch_size, 11, 7)
-        
-        # CNN feature extraction
-        x = self.conv1(x)
-        x = self.bn_conv(x)
-        x = F.relu(x)
-        x = self.dropout_conv(x)
-        
-        # Back to sequence format for LSTM
-        x = x.transpose(1, 2)  # (batch_size, 7, hidden_dim)
-        
-        # LSTM sequence modeling
-        lstm_out, (h_n, c_n) = self.lstm(x)
-        last_output = lstm_out[:, -1, :]
-        
-        # Dense layers
-        x = self.fc1(last_output)
-        x = F.relu(x)
-        x = self.dropout_fc(x)
-        x = self.fc2(x)
-        return torch.sigmoid(x)
+        x_in = x.transpose(1, 2)  # (batch_size, 11, 7)
+
+        # CNN encoder with residual path
+        residual = self.residual_proj(x_in)
+        x_cnn = self.cnn_in(x_in)
+        x_cnn = self.cnn_block_2(x_cnn)
+        x_cnn = self.cnn_block_3(x_cnn)
+        x_cnn = x_cnn + residual
+
+        # Convert back to sequence format
+        x_seq = x_cnn.transpose(1, 2)  # (batch_size, 7, hidden_dim)
+
+        # BiLSTM over time
+        lstm_out, _ = self.lstm(x_seq)  # (batch_size, 7, 2*hidden_dim)
+
+        # Self-attention refinement
+        attn_out, _ = self.attn(lstm_out, lstm_out, lstm_out, need_weights=False)
+
+        # Attention pooling over time
+        pool_logits = self.pool_score(attn_out).squeeze(-1)  # (batch_size, 7)
+        pool_weights = torch.softmax(pool_logits, dim=1)
+        pooled = torch.sum(attn_out * pool_weights.unsqueeze(-1), dim=1)
+
+        # Fuse pooled context with last timestep representation
+        last_timestep = attn_out[:, -1, :]
+        fused = torch.cat([pooled, last_timestep], dim=1)
+
+        logits = self.head(fused)
+        return torch.sigmoid(logits)
