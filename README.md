@@ -47,11 +47,36 @@ python -m pip install -r requirements.txt
 python scripts/train.py --lookback-days 7
 ```
 
+Train with all input sources (citizen science + IMS weather CSV + live RSS):
+
+```bash
+python scripts/train.py \
+	--use-integrated-data \
+	--weather-csv-path data/IMS/data_202603142120.csv \
+	--lookback-days 14
+```
+
 4. Run prediction example:
 
 ```bash
 python scripts/predict.py --lookback-days 7
 ```
+
+Predict using integrated data inputs (including live RSS where available):
+
+```bash
+python scripts/predict.py \
+	--use-integrated-data \
+	--weather-csv-path data/IMS/data_202603142120.csv \
+	--lookback-days 14 \
+	--beach-id 14 \
+	--days-ahead 2
+```
+
+Note on live RSS horizon:
+- RSS city/sea/alert forecasts are only available for the next few days.
+- The predictor applies RSS values only for dates present in live RSS feeds.
+- For dates beyond RSS coverage, it falls back to sequence carry-forward/trend logic.
 
 5. Run model evaluation:
 

@@ -13,6 +13,11 @@ import torch
 import torch.nn as nn
 from datetime import timedelta, date
 from .data_loader import load_jellyfish_data
+from .data_loader_forecasting import (
+    load_integrated_data,
+    load_live_ims_xml_features,
+    map_live_rss_features_to_beaches,
+)
 from .models import (
     BaselineLogisticRegression,
     FeedforwardNet,
@@ -114,18 +119,46 @@ class JellyfishPredictor:
         self.models = {}
         self.normalization_stats = {}
         self.data_cache = None
+        self.live_rss_lookup = {}
         
         print(f"Initialized JellyfishPredictor on {device}")
     
-    def load_data_cache(self, lookback_days=7, forecast_days=1):
+    def load_data_cache(
+        self,
+        lookback_days=7,
+        forecast_days=1,
+        use_integrated_data=False,
+        weather_csv_path='data/IMS/data_202603142120.csv',
+        include_live_xml=True,
+    ):
         """Load and cache all data for faster predictions
         
         Args:
             lookback_days: Historical window (default: 7)
             forecast_days: Forecast horizon (default: 1)
+            use_integrated_data: Whether to load integrated citizen+weather features
+            weather_csv_path: IMS weather CSV path (used when use_integrated_data=True)
+            include_live_xml: Include live RSS XML enrichments in integrated mode
         """
         print("Loading data cache...")
-        X, y, metadata = load_jellyfish_data(lookback_days, forecast_days)
+        if use_integrated_data:
+            integrated = load_integrated_data(
+                weather_csv_path=weather_csv_path,
+                lookback_days=lookback_days,
+                forecast_days=forecast_days,
+                include_live_xml=include_live_xml,
+            )
+            if integrated is None:
+                raise RuntimeError("Failed to load integrated data cache")
+            X, y, metadata, feature_cols, daily_citizen, *_ = integrated
+        else:
+            X, y, metadata = load_jellyfish_data(lookback_days, forecast_days)
+            feature_cols = [
+                'decimalLatitude', 'decimalLongitude', 'month', 'day_of_month',
+                'sin_month', 'cos_month', 'distance_from_coast', 'species_id',
+                'diameter_cm', 'observation_count', 'sting'
+            ]
+            daily_citizen = None
         
         # Compute normalization statistics
         X_tensor = torch.FloatTensor(X)
@@ -147,10 +180,46 @@ class JellyfishPredictor:
             'X': X,
             'y': y,
             'metadata': metadata,
-            'X_tensor': X_tensor
+            'X_tensor': X_tensor,
+            'feature_cols': feature_cols,
+            'use_integrated_data': bool(use_integrated_data),
         }
+
+        self.live_rss_lookup = {}
+        if use_integrated_data and include_live_xml and daily_citizen is not None:
+            self.live_rss_lookup = self._build_live_rss_lookup(daily_citizen)
         
         print(f"✓ Data cache loaded: {X.shape}")
+
+    def _build_live_rss_lookup(self, daily_citizen):
+        """Build lookup for RSS features by (beach_id, date) for near-term forecast days."""
+        try:
+            live_daily = load_live_ims_xml_features(region="central_coast")
+            if live_daily is None or live_daily.empty:
+                return {}
+
+            mapped = map_live_rss_features_to_beaches(live_daily, daily_citizen)
+            if mapped is None or mapped.empty:
+                return {}
+
+            lookup = {}
+            for _, row in mapped.iterrows():
+                row_date = row.get('date')
+                if pd.isna(row_date):
+                    continue
+                key = (int(row['beach_id']), pd.to_datetime(row_date).date())
+                lookup[key] = row.to_dict()
+
+            if lookup:
+                unique_dates = sorted({k[1] for k in lookup.keys()})
+                print(
+                    f"✓ Live RSS lookup ready for {len(lookup)} beach-date entries "
+                    f"across {len(unique_dates)} date(s)"
+                )
+            return lookup
+        except Exception as exc:
+            print(f"⚠ Could not build live RSS lookup: {exc}")
+            return {}
     
     def load_model(self, model_name, model_path, input_dim=None):
         """Load a trained model
@@ -200,13 +269,34 @@ class JellyfishPredictor:
                 input_dim = inferred_input_dim
             model = FeedforwardNet(input_dim)
         elif model_name == 'LSTM':
-            model = LSTMNet(input_dim=11)
+            inferred_input_dim = None
+            input_weight = state_dict.get('lstm.weight_ih_l0') if isinstance(state_dict, dict) else None
+            if isinstance(input_weight, torch.Tensor) and input_weight.ndim == 2:
+                inferred_input_dim = int(input_weight.shape[1])
+            model = LSTMNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
         elif model_name == 'GRU':
-            model = GRUNet(input_dim=11)
+            inferred_input_dim = None
+            input_weight = state_dict.get('gru.weight_ih_l0') if isinstance(state_dict, dict) else None
+            if isinstance(input_weight, torch.Tensor) and input_weight.ndim == 2:
+                inferred_input_dim = int(input_weight.shape[1])
+            model = GRUNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
         elif model_name == 'Conv1D':
-            model = Conv1DNet(input_dim=11)
+            inferred_input_dim = None
+            conv_weight = state_dict.get('conv1.weight') if isinstance(state_dict, dict) else None
+            if isinstance(conv_weight, torch.Tensor) and conv_weight.ndim == 3:
+                inferred_input_dim = int(conv_weight.shape[1])
+            model = Conv1DNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
         elif model_name == 'Hybrid':
-            model = HybridNet(input_dim=11)
+            inferred_input_dim = None
+            inferred_hidden_dim = None
+            conv_weight = state_dict.get('cnn_in.0.weight') if isinstance(state_dict, dict) else None
+            if isinstance(conv_weight, torch.Tensor) and conv_weight.ndim == 3:
+                inferred_hidden_dim = int(conv_weight.shape[0])
+                inferred_input_dim = int(conv_weight.shape[1])
+            model = HybridNet(
+                input_dim=inferred_input_dim if inferred_input_dim is not None else 11,
+                hidden_dim=inferred_hidden_dim if inferred_hidden_dim is not None else 96,
+            )
         else:
             raise ValueError(f"Unknown model: {model_name}")
         
@@ -316,6 +406,9 @@ class JellyfishPredictor:
 
         seq = self.data_cache['X'][latest_idx].copy().astype(np.float32)
         days_ahead = (forecast_date - latest_date).days
+        feature_cols = self.data_cache.get('feature_cols', [])
+        feature_to_idx = {name: i for i, name in enumerate(feature_cols)}
+        rss_feature_names = [f for f in feature_cols if str(f).startswith('rss_')]
 
         idx = self._feature_indices()
         for step in range(1, days_ahead + 1):
@@ -348,6 +441,23 @@ class JellyfishPredictor:
             new_row[idx['day_of_month']] = day_of_month
             new_row[idx['sin_month']] = sin_month
             new_row[idx['cos_month']] = cos_month
+
+            # Use live RSS values only when available for this exact forecast day.
+            # If RSS horizon does not cover target_day, keep carried values from history.
+            if self.live_rss_lookup and rss_feature_names:
+                rss_values = self.live_rss_lookup.get((int(beach_id), target_day))
+                if rss_values:
+                    for feat_name in rss_feature_names:
+                        feat_idx = feature_to_idx.get(feat_name)
+                        if feat_idx is None:
+                            continue
+                        raw_val = rss_values.get(feat_name)
+                        if raw_val is None or pd.isna(raw_val):
+                            continue
+                        try:
+                            new_row[feat_idx] = float(raw_val)
+                        except (TypeError, ValueError):
+                            continue
 
             seq = np.vstack([seq[1:], new_row]).astype(np.float32)
 

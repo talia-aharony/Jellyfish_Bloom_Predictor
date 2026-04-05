@@ -26,6 +26,7 @@ if __package__ in (None, ""):
     if ROOT not in sys.path:
         sys.path.insert(0, ROOT)
     from jellyfish.data_loader import load_jellyfish_data
+    from jellyfish.data_loader_forecasting import load_integrated_data
     from jellyfish.models import (
         BaselineLogisticRegression,
         FeedforwardNet,
@@ -36,6 +37,7 @@ if __package__ in (None, ""):
     )
 else:
     from .data_loader import load_jellyfish_data
+    from .data_loader_forecasting import load_integrated_data
     from .models import (
         BaselineLogisticRegression,
         FeedforwardNet,
@@ -370,7 +372,10 @@ def plot_training_history(trainer, model_name='Model'):
 
 
 def train_all_models(
-    lookback_days=7,
+    lookback_days=14,
+    use_integrated_data=False,
+    weather_csv_path='data/IMS/data_202603142120.csv',
+    include_live_xml=True,
     batch_size=BATCH_SIZE,
     learning_rate=LEARNING_RATE,
     dropout_prob=DROPOUT_PROB,
@@ -387,6 +392,9 @@ def train_all_models(
     
     config = {
         'lookback_days': int(lookback_days),
+        'use_integrated_data': bool(use_integrated_data),
+        'weather_csv_path': str(weather_csv_path),
+        'include_live_xml': bool(include_live_xml),
         'batch_size': int(batch_size),
         'learning_rate': float(learning_rate),
         'dropout_prob': float(dropout_prob),
@@ -404,8 +412,22 @@ def train_all_models(
     # Load data
     print("1. LOADING DATA")
     print("-" * 100)
-    
-    X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
+
+    if use_integrated_data:
+        integrated = load_integrated_data(
+            weather_csv_path=weather_csv_path,
+            lookback_days=lookback_days,
+            forecast_days=1,
+            include_live_xml=include_live_xml,
+        )
+        if integrated is None:
+            raise RuntimeError("Failed to load integrated data. Check weather_csv_path and input files.")
+        X, y, metadata, feature_cols, daily_citizen, daily_weather, merged = integrated
+    else:
+        X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
+
+    n_features = int(X.shape[2])
+    config['n_features_per_day'] = n_features
     print()
     
     # Normalize
@@ -499,11 +521,11 @@ def train_all_models(
     
     # Neural networks
     models = {
-        # 'Feedforward': FeedforwardNet(input_dim=lookback_days * 11, dropout_prob=dropout_prob),
-        # 'LSTM': LSTMNet(input_dim=11, dropout_prob=dropout_prob),
-        'GRU': GRUNet(input_dim=11, dropout_prob=dropout_prob),
-        # 'Conv1D': Conv1DNet(input_dim=11, dropout_prob=dropout_prob),
-        'Hybrid': HybridNet(input_dim=11, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob)
+        # 'Feedforward': FeedforwardNet(input_dim=lookback_days * n_features, dropout_prob=dropout_prob),
+        # 'LSTM': LSTMNet(input_dim=n_features, dropout_prob=dropout_prob),
+        'GRU': GRUNet(input_dim=n_features, dropout_prob=dropout_prob),
+        # 'Conv1D': Conv1DNet(input_dim=n_features, dropout_prob=dropout_prob),
+        'Hybrid': HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob)
     }
     
     for model_name, model in models.items():
@@ -562,6 +584,9 @@ def train_all_models(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train jellyfish forecasting models with tunable hyperparameters')
     parser.add_argument('--lookback-days', type=int, default=14, help='Historical input window length in days (default: 7)')
+    parser.add_argument('--use-integrated-data', action='store_true', help='Train using integrated citizen + IMS weather + live RSS features')
+    parser.add_argument('--weather-csv-path', type=str, default='data/IMS/data_202603142120.csv', help='Path to IMS weather CSV for integrated mode')
+    parser.add_argument('--disable-live-xml', action='store_true', help='Disable live RSS XML enrichment when using integrated mode')
     parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help=f'Batch size (default: {BATCH_SIZE})')
     parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help=f'Learning rate (default: {LEARNING_RATE})')
     parser.add_argument('--dropout-prob', type=float, default=DROPOUT_PROB, help=f'Dropout probability (default: {DROPOUT_PROB})')
@@ -574,6 +599,9 @@ if __name__ == '__main__':
 
     train_all_models(
         lookback_days=args.lookback_days,
+        use_integrated_data=args.use_integrated_data,
+        weather_csv_path=args.weather_csv_path,
+        include_live_xml=not args.disable_live_xml,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         dropout_prob=args.dropout_prob,

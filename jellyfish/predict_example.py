@@ -69,7 +69,14 @@ def get_user_inputs(metadata):
     return beach_id, days_ahead
 
 
-def main(days_ahead=None, beach_id=None, lookback_days=7):
+def main(
+    days_ahead=None,
+    beach_id=None,
+    lookback_days=7,
+    use_integrated_data=False,
+    weather_csv_path='data/IMS/data_202603142120.csv',
+    include_live_xml=True,
+):
     """Main prediction example"""
     
     print("=" * 80)
@@ -92,7 +99,13 @@ def main(days_ahead=None, beach_id=None, lookback_days=7):
     
     print("STEP 2: Load Data Cache")
     print("-" * 80)
-    predictor.load_data_cache(lookback_days=lookback_days, forecast_days=1)
+    predictor.load_data_cache(
+        lookback_days=lookback_days,
+        forecast_days=1,
+        use_integrated_data=use_integrated_data,
+        weather_csv_path=weather_csv_path,
+        include_live_xml=include_live_xml,
+    )
     print()
     
     # =========================================================================
@@ -330,5 +343,28 @@ if __name__ == '__main__':
         default=7,
         help="Historical input window length in days (default: 7)",
     )
+    parser.add_argument(
+        "--use-integrated-data",
+        action="store_true",
+        help="Use integrated citizen + weather + RSS data cache",
+    )
+    parser.add_argument(
+        "--weather-csv-path",
+        type=str,
+        default="data/IMS/data_202603142120.csv",
+        help="Path to IMS weather CSV (used with --use-integrated-data)",
+    )
+    parser.add_argument(
+        "--disable-live-xml",
+        action="store_true",
+        help="Disable live RSS XML enrichment in integrated mode",
+    )
     args = parser.parse_args()
-    main(days_ahead=args.days_ahead, beach_id=args.beach_id, lookback_days=args.lookback_days)
+    main(
+        days_ahead=args.days_ahead,
+        beach_id=args.beach_id,
+        lookback_days=args.lookback_days,
+        use_integrated_data=args.use_integrated_data,
+        weather_csv_path=args.weather_csv_path,
+        include_live_xml=not args.disable_live_xml,
+    )

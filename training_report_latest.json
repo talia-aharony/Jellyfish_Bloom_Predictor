@@ -1,70 +1,74 @@
 {
-  "timestamp": "2026-04-04T21:33:00",
+  "timestamp": "2026-04-04T22:19:51",
   "config": {
     "lookback_days": 14,
+    "use_integrated_data": false,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
     "batch_size": 32,
     "learning_rate": 0.001,
     "dropout_prob": 0.3,
     "num_epochs": 100,
     "patience": 15,
     "hybrid_hidden_dim": 96,
-    "threshold_selection_metric": "f1_on_validation"
+    "threshold_selection_metric": "f1_on_validation",
+    "n_features_per_day": 11
   },
   "results": {
     "Baseline": {
-      "accuracy": 0.5577909270216963,
-      "precision": 0.4074766355140187,
-      "recall": 0.7936893203883495,
-      "f1": 0.5384932070811033,
-      "auc": 0.6716101694915254,
-      "threshold": 0.37,
-      "val_best_f1": 0.5540432345876701,
+      "accuracy": 0.5751479289940828,
+      "precision": 0.41639127561136813,
+      "recall": 0.7645631067961165,
+      "f1": 0.5391527599486521,
+      "auc": 0.6735156724336532,
+      "threshold": 0.27,
+      "val_best_f1": 0.5651634257343815,
       "confusion_matrix": [
         [
-          760,
-          951
+          828,
+          883
         ],
         [
-          170,
-          654
+          194,
+          630
         ]
       ]
     },
     "GRU": {
-      "accuracy": 0.6023668639053255,
-      "precision": 0.4339080459770115,
-      "recall": 0.7330097087378641,
-      "f1": 0.5451263537906137,
-      "auc": 0.6813408952920281,
-      "threshold": 0.29000000000000004,
-      "val_best_f1": 0.5735422106179286,
+      "accuracy": 0.6094674556213018,
+      "precision": 0.4353582554517134,
+      "recall": 0.6783980582524272,
+      "f1": 0.5303605313092978,
+      "auc": 0.6767932935375327,
+      "threshold": 0.30000000000000004,
+      "val_best_f1": 0.5702517162471397,
       "confusion_matrix": [
         [
-          923,
-          788
+          986,
+          725
         ],
         [
-          220,
-          604
+          265,
+          559
         ]
       ]
     },
     "Hybrid": {
-      "accuracy": 0.6205128205128205,
-      "precision": 0.44558359621451105,
-      "recall": 0.6856796116504854,
-      "f1": 0.5401529636711281,
-      "auc": 0.6749580101343108,
-      "threshold": 0.33,
-      "val_best_f1": 0.5702479338842975,
+      "accuracy": 0.6047337278106509,
+      "precision": 0.4355072463768116,
+      "recall": 0.7293689320388349,
+      "f1": 0.5453720508166969,
+      "auc": 0.681116050909875,
+      "threshold": 0.30000000000000004,
+      "val_best_f1": 0.5690703735881842,
       "confusion_matrix": [
         [
-          1008,
-          703
+          932,
+          779
         ],
         [
-          259,
-          565
+          223,
+          601
         ]
       ]
     }

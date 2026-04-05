@@ -15,6 +15,9 @@ from jellyfish.train import train_all_models
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrypoint wrapper for jellyfish training")
     parser.add_argument('--lookback-days', type=int, default=7)
+    parser.add_argument('--use-integrated-data', action='store_true')
+    parser.add_argument('--weather-csv-path', type=str, default='data/IMS/data_202603142120.csv')
+    parser.add_argument('--disable-live-xml', action='store_true')
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--learning-rate', type=float, default=0.001)
     parser.add_argument('--dropout-prob', type=float, default=0.3)
@@ -26,6 +29,9 @@ if __name__ == "__main__":
 
     train_all_models(
         lookback_days=args.lookback_days,
+        use_integrated_data=args.use_integrated_data,
+        weather_csv_path=args.weather_csv_path,
+        include_live_xml=not args.disable_live_xml,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         dropout_prob=args.dropout_prob,
