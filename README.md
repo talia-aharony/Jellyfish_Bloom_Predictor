@@ -156,6 +156,20 @@ python scripts/compare_reports.py --model LSTM --sort-by f1
 
 This makes your hyperparameter commentary easier: cite the top-ranked run and compare it against the next 2-3 runs by F1/AUC and precision/recall tradeoff.
 
+### GRU vs Hybrid sweep runner
+
+Run a grid sweep (multiple train runs, one JSON report per run):
+
+```bash
+python scripts/sweep_gru_hybrid.py --use-integrated-data --lookback-days 14
+```
+
+Preview commands only:
+
+```bash
+python scripts/sweep_gru_hybrid.py --dry-run
+```
+
 ## Direct Execution (Also Supported)
 
 These package files can also be run directly:
