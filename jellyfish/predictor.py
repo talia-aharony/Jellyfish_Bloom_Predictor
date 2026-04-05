@@ -18,6 +18,12 @@ from .data_loader_forecasting import (
     load_live_ims_xml_features,
     map_live_rss_features_to_beaches,
 )
+from .settings import (
+    DEFAULT_LOOKBACK_DAYS,
+    DEFAULT_WEATHER_CSV_PATH,
+    DEFAULT_USE_INTEGRATED_DATA,
+    DEFAULT_INCLUDE_LIVE_XML,
+)
 from .models import (
     BaselineLogisticRegression,
     FeedforwardNet,
@@ -125,11 +131,11 @@ class JellyfishPredictor:
     
     def load_data_cache(
         self,
-        lookback_days=7,
+        lookback_days=DEFAULT_LOOKBACK_DAYS,
         forecast_days=1,
-        use_integrated_data=False,
-        weather_csv_path='data/IMS/data_202603142120.csv',
-        include_live_xml=True,
+        use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
+        weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
+        include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
     ):
         """Load and cache all data for faster predictions
         
@@ -700,7 +706,7 @@ if __name__ == '__main__':
     predictor = JellyfishPredictor(device='cpu')
     
     # Load data
-    predictor.load_data_cache(lookback_days=7, forecast_days=1)
+    predictor.load_data_cache(lookback_days=DEFAULT_LOOKBACK_DAYS, forecast_days=1)
     
     # Example: Get some metadata to find valid beach-date combinations
     metadata = predictor.data_cache['metadata']

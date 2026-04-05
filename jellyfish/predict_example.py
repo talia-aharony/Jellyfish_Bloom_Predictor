@@ -18,8 +18,10 @@ if __package__ in (None, ""):
     if ROOT not in sys.path:
         sys.path.insert(0, ROOT)
     from jellyfish.predictor import JellyfishPredictor
+    from jellyfish.settings import DEFAULT_LOOKBACK_DAYS, DEFAULT_WEATHER_CSV_PATH
 else:
     from .predictor import JellyfishPredictor
+    from .settings import DEFAULT_LOOKBACK_DAYS, DEFAULT_WEATHER_CSV_PATH
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
@@ -72,9 +74,9 @@ def get_user_inputs(metadata):
 def main(
     days_ahead=None,
     beach_id=None,
-    lookback_days=7,
+    lookback_days=DEFAULT_LOOKBACK_DAYS,
     use_integrated_data=False,
-    weather_csv_path='data/IMS/data_202603142120.csv',
+    weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
     include_live_xml=True,
 ):
     """Main prediction example"""
@@ -340,8 +342,8 @@ if __name__ == '__main__':
     parser.add_argument(
         "--lookback-days",
         type=int,
-        default=7,
-        help="Historical input window length in days (default: 7)",
+        default=DEFAULT_LOOKBACK_DAYS,
+        help=f"Historical input window length in days (default: {DEFAULT_LOOKBACK_DAYS})",
     )
     parser.add_argument(
         "--use-integrated-data",
@@ -351,7 +353,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--weather-csv-path",
         type=str,
-        default="data/IMS/data_202603142120.csv",
+        default=DEFAULT_WEATHER_CSV_PATH,
         help="Path to IMS weather CSV (used with --use-integrated-data)",
     )
     parser.add_argument(

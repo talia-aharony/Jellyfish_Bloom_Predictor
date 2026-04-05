@@ -27,6 +27,19 @@ if __package__ in (None, ""):
         sys.path.insert(0, ROOT)
     from jellyfish.data_loader import load_jellyfish_data
     from jellyfish.data_loader_forecasting import load_integrated_data
+    from jellyfish.settings import (
+        DEFAULT_LOOKBACK_DAYS,
+        DEFAULT_WEATHER_CSV_PATH,
+        DEFAULT_USE_INTEGRATED_DATA,
+        DEFAULT_INCLUDE_LIVE_XML,
+        DEFAULT_BATCH_SIZE,
+        DEFAULT_LEARNING_RATE,
+        DEFAULT_DROPOUT_PROB,
+        DEFAULT_NUM_EPOCHS,
+        DEFAULT_PATIENCE,
+        DEFAULT_HYBRID_HIDDEN_DIM,
+        DEFAULT_REPORT_PATH,
+    )
     from jellyfish.models import (
         BaselineLogisticRegression,
         FeedforwardNet,
@@ -38,6 +51,19 @@ if __package__ in (None, ""):
 else:
     from .data_loader import load_jellyfish_data
     from .data_loader_forecasting import load_integrated_data
+    from .settings import (
+        DEFAULT_LOOKBACK_DAYS,
+        DEFAULT_WEATHER_CSV_PATH,
+        DEFAULT_USE_INTEGRATED_DATA,
+        DEFAULT_INCLUDE_LIVE_XML,
+        DEFAULT_BATCH_SIZE,
+        DEFAULT_LEARNING_RATE,
+        DEFAULT_DROPOUT_PROB,
+        DEFAULT_NUM_EPOCHS,
+        DEFAULT_PATIENCE,
+        DEFAULT_HYBRID_HIDDEN_DIM,
+        DEFAULT_REPORT_PATH,
+    )
     from .models import (
         BaselineLogisticRegression,
         FeedforwardNet,
@@ -48,10 +74,10 @@ else:
     )
 
 # Hyperparameters
-BATCH_SIZE = 32
-LEARNING_RATE = 0.001
-DROPOUT_PROB = 0.3
-NUM_EPOCHS = 100
+BATCH_SIZE = DEFAULT_BATCH_SIZE
+LEARNING_RATE = DEFAULT_LEARNING_RATE
+DROPOUT_PROB = DEFAULT_DROPOUT_PROB
+NUM_EPOCHS = DEFAULT_NUM_EPOCHS
 
 
 def save_training_report(results, config, output_path):
@@ -81,7 +107,7 @@ def save_training_report(results, config, output_path):
     print(f"✓ Saved training report: {output_path}")
 
 
-def create_engineered_features_forecasting(X, lookback=14):
+def create_engineered_features_forecasting(X, lookback=DEFAULT_LOOKBACK_DAYS):
     """Create engineered features for baseline model"""
     n_samples, lookback, n_features = X.shape
     engineered_features = []
@@ -372,17 +398,17 @@ def plot_training_history(trainer, model_name='Model'):
 
 
 def train_all_models(
-    lookback_days=14,
-    use_integrated_data=False,
-    weather_csv_path='data/IMS/data_202603142120.csv',
-    include_live_xml=True,
+    lookback_days=DEFAULT_LOOKBACK_DAYS,
+    use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
+    weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
+    include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
     batch_size=BATCH_SIZE,
     learning_rate=LEARNING_RATE,
     dropout_prob=DROPOUT_PROB,
     num_epochs=NUM_EPOCHS,
-    patience=15,
-    hybrid_hidden_dim=96,
-    report_path='training_report_latest.json',
+    patience=DEFAULT_PATIENCE,
+    hybrid_hidden_dim=DEFAULT_HYBRID_HIDDEN_DIM,
+    report_path=DEFAULT_REPORT_PATH,
 ):
     """Main training function"""
     print("=" * 100)
@@ -583,9 +609,9 @@ def train_all_models(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train jellyfish forecasting models with tunable hyperparameters')
-    parser.add_argument('--lookback-days', type=int, default=14, help='Historical input window length in days (default: 7)')
+    parser.add_argument('--lookback-days', type=int, default=DEFAULT_LOOKBACK_DAYS, help=f'Historical input window length in days (default: {DEFAULT_LOOKBACK_DAYS})')
     parser.add_argument('--use-integrated-data', action='store_true', help='Train using integrated citizen + IMS weather + live RSS features')
-    parser.add_argument('--weather-csv-path', type=str, default='data/IMS/data_202603142120.csv', help='Path to IMS weather CSV for integrated mode')
+    parser.add_argument('--weather-csv-path', type=str, default=DEFAULT_WEATHER_CSV_PATH, help='Path to IMS weather CSV for integrated mode')
     parser.add_argument('--disable-live-xml', action='store_true', help='Disable live RSS XML enrichment when using integrated mode')
     parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help=f'Batch size (default: {BATCH_SIZE})')
     parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help=f'Learning rate (default: {LEARNING_RATE})')

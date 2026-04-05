@@ -19,9 +19,11 @@ if __package__ in (None, ""):
         sys.path.insert(0, ROOT)
     from jellyfish.predictor import JellyfishPredictor
     from jellyfish.evaluator import ModelEvaluator
+    from jellyfish.settings import DEFAULT_LOOKBACK_DAYS
 else:
     from .predictor import JellyfishPredictor
     from .evaluator import ModelEvaluator
+    from .settings import DEFAULT_LOOKBACK_DAYS
 import pandas as pd
 import numpy as np
 
@@ -40,7 +42,7 @@ def main():
     print("-" * 100)
     
     predictor = JellyfishPredictor(device='cpu')
-    predictor.load_data_cache(lookback_days=7, forecast_days=1)
+    predictor.load_data_cache(lookback_days=DEFAULT_LOOKBACK_DAYS, forecast_days=1)
     
     # Load models
     try:

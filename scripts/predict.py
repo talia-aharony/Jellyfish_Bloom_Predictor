@@ -10,15 +10,16 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from jellyfish.predict_example import main
+from jellyfish.settings import DEFAULT_LOOKBACK_DAYS, DEFAULT_WEATHER_CSV_PATH
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrypoint wrapper for jellyfish prediction example")
     parser.add_argument('--days-ahead', type=int, default=None)
     parser.add_argument('--beach-id', type=int, default=None)
-    parser.add_argument('--lookback-days', type=int, default=7)
+    parser.add_argument('--lookback-days', type=int, default=DEFAULT_LOOKBACK_DAYS)
     parser.add_argument('--use-integrated-data', action='store_true')
-    parser.add_argument('--weather-csv-path', type=str, default='data/IMS/data_202603142120.csv')
+    parser.add_argument('--weather-csv-path', type=str, default=DEFAULT_WEATHER_CSV_PATH)
     parser.add_argument('--disable-live-xml', action='store_true')
     args = parser.parse_args()
 

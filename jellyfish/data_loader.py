@@ -1,11 +1,83 @@
 import pandas as pd
 import numpy as np
 import os
+import hashlib
+import pickle
 
 try:
     from .data_loader_forecasting import load_integrated_data
 except ImportError:
     load_integrated_data = None
+
+
+def _citizen_base_dir():
+    return os.path.join(
+        "data",
+        "Citizen Science based jellyfish observations along the Israeli Mediterranean coast in 2011-2025",
+    )
+
+
+def _citizen_file_paths():
+    base = _citizen_base_dir()
+    return {
+        "events": os.path.join(base, "event.txt"),
+        "occurrence": os.path.join(base, "occurrence.txt"),
+        "measurement": os.path.join(base, "extendedmeasurementorfact.txt"),
+    }
+
+
+def _cache_paths(lookback_days, forecast_days):
+    cache_dir = os.path.join(".cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    prefix = os.path.join(cache_dir, f"jellyfish_lb{lookback_days}_fh{forecast_days}")
+    return {
+        "meta": f"{prefix}_meta.pkl",
+        "arrays": f"{prefix}_arrays.npz",
+    }
+
+
+def _source_signature(paths):
+    hasher = hashlib.md5()
+    for key in sorted(paths.keys()):
+        p = paths[key]
+        stat = os.stat(p)
+        hasher.update(f"{p}|{stat.st_mtime_ns}|{stat.st_size}".encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _try_load_cache(lookback_days, forecast_days, expected_signature):
+    cpaths = _cache_paths(lookback_days, forecast_days)
+    if not (os.path.exists(cpaths["meta"]) and os.path.exists(cpaths["arrays"])):
+        return None
+
+    try:
+        with open(cpaths["meta"], "rb") as f:
+            meta = pickle.load(f)
+
+        if meta.get("source_signature") != expected_signature:
+            return None
+
+        arrays = np.load(cpaths["arrays"], allow_pickle=False)
+        X = arrays["X"]
+        y = arrays["y"]
+        metadata = pd.DataFrame(meta["metadata_records"])
+
+        print(f"✓ Loaded cached dataset: {X.shape}")
+        return X, y, metadata
+    except Exception:
+        return None
+
+
+def _save_cache(lookback_days, forecast_days, source_signature, X, y, metadata):
+    cpaths = _cache_paths(lookback_days, forecast_days)
+    meta = {
+        "source_signature": source_signature,
+        "metadata_records": metadata.to_dict(orient="records"),
+    }
+
+    with open(cpaths["meta"], "wb") as f:
+        pickle.dump(meta, f)
+    np.savez_compressed(cpaths["arrays"], X=X, y=y)
 
 def load_all_data():
     """Load all data from data directory"""
@@ -52,11 +124,32 @@ def load_jellyfish_data(lookback_days=7, forecast_days=1):
         y: Binary labels for forecast_days ahead (n_samples,)
         metadata: DataFrame with beach_id, beach_name, forecast_date, etc.
     """
-    data = load_all_data()
+    paths = _citizen_file_paths()
+    signature = _source_signature(paths)
+    cached = _try_load_cache(lookback_days, forecast_days, signature)
+    if cached is not None:
+        X, y, metadata = cached
+        print(f"\n" + "="*80)
+        print(f"JELLYFISH FORECASTING DATA - PER BEACH PER DAY")
+        print(f"="*80)
+        print(f"Lookback window:        {lookback_days} days (historical features)")
+        print(f"Forecast horizon:       {forecast_days} day(s) ahead (prediction target)")
+        print(f"Total sequences:        {len(X)} beach-day combinations")
+        print(f"Input shape:            {X.shape} (samples, days, features_per_day)")
+        print(f"Output shape:           {y.shape}")
+        print(f"")
+        print(f"Positive samples:       {int(y.sum())} ({y.mean()*100:.1f}%)")
+        print(f"Negative samples:       {len(y) - int(y.sum())} ({(1-y.mean())*100:.1f}%)")
+        print(f"")
+        print(f"Unique beaches:         {metadata['beach_id'].nunique()}")
+        print(f"Features per day:       {X.shape[2] if X.ndim == 3 else 'N/A'}")
+        print(f"Date range:             {metadata['lookback_start'].min()} to {metadata['forecast_date'].max()}")
+        print(f"="*80 + "\n")
+        return X, y, metadata
 
-    events = data["Citizen Science based jellyfish observations along the Israeli Mediterranean coast in 2011-2025"]["event.txt"]
-    occ = data["Citizen Science based jellyfish observations along the Israeli Mediterranean coast in 2011-2025"]["occurrence.txt"]
-    meas = data["Citizen Science based jellyfish observations along the Israeli Mediterranean coast in 2011-2025"]["extendedmeasurementorfact.txt"]
+    events = pd.read_csv(paths["events"], sep="\t", low_memory=False)
+    occ = pd.read_csv(paths["occurrence"], sep="\t", low_memory=False)
+    meas = pd.read_csv(paths["measurement"], sep="\t", low_memory=False)
 
     # Extract beach ID and name (robust to missing/invalid locality strings)
     locality_text = events["verbatimLocality"].astype(str)
@@ -287,5 +380,7 @@ def load_jellyfish_data(lookback_days=7, forecast_days=1):
     print(f"")
     print(f"Date range:             {metadata['lookback_start'].min()} to {metadata['forecast_date'].max()}")
     print(f"="*80 + "\n")
+
+    _save_cache(lookback_days, forecast_days, signature, X, y, metadata)
     
     return X, y, metadata

@@ -86,6 +86,10 @@ python scripts/evaluate.py
 
 ## Training + Hyperparameter Tuning Notes
 
+Central defaults are now in [jellyfish/settings.py](jellyfish/settings.py).
+This is the single source for default hyperparameters used by training, prediction, and evaluation entrypoints.
+If you want to tune in one place (for example only `lookback_days`), edit that file and rerun scripts.
+
 Use the direct training script when tuning hyperparameters:
 
 ```bash
