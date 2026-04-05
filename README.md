@@ -164,6 +164,27 @@ Run a grid sweep (multiple train runs, one JSON report per run):
 python scripts/sweep_gru_hybrid.py --use-integrated-data --lookback-days 14
 ```
 
+Run many more experiments (large preset, shuffled, keep going on failures):
+
+```bash
+python scripts/sweep_gru_hybrid.py \
+	--preset large \
+	--use-integrated-data \
+	--shuffle \
+	--continue-on-error \
+	--skip-existing
+```
+
+Run a sampled subset from a very large grid:
+
+```bash
+python scripts/sweep_gru_hybrid.py \
+	--preset large \
+	--sample-runs 40 \
+	--use-integrated-data \
+	--tag sampled
+```
+
 Preview commands only:
 
 ```bash
