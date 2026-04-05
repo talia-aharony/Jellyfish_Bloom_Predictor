@@ -238,12 +238,11 @@ class HybridNet(nn.Module):
     """Task-fitted hybrid with justified complexity for bloom forecasting.
 
     Rationale:
-    - Local short-term signals (recent changes/spikes) are captured by temporal CNNs.
-    - Longer temporal dynamics are captured by a GRU branch.
-    - A learned gate fuses both views per sample (instead of blindly stacking depth).
+    - Temporal CNNs capture short-term local patterns and spikes.
+    - A bidirectional GRU captures longer dependencies in both directions of the window.
+    - Attention pooling lets the model focus on the most informative days.
 
-    This keeps model complexity meaningful: each branch maps to a distinct temporal
-    behavior expected in jellyfish bloom patterns.
+    This is still reasonably compact, but it is more expressive than a plain GRU.
 
     Input: (batch_size, lookback_days, n_features)
     Output: (batch_size, 1) - probability of jellyfish presence
@@ -272,29 +271,30 @@ class HybridNet(nn.Module):
             nn.ReLU(),
         )
 
+        gru_hidden = max(8, hidden_dim // 2)
         self.gru = nn.GRU(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
+            input_size=hidden_dim,
+            hidden_size=gru_hidden,
             num_layers=1,
+            bidirectional=True,
             batch_first=True,
         )
 
-        self.gate = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim),
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=dropout_prob),
             nn.Linear(hidden_dim, 1),
-            nn.Sigmoid(),
         )
 
         self.head = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Dropout(p=dropout_prob),
-            nn.Linear(hidden_dim // 2, 32),
-            nn.ReLU(),
-            nn.Dropout(p=dropout_prob),
-            nn.Linear(32, 1),
+            nn.Linear(hidden_dim // 2, 1),
         )
 
     def forward(self, x):
@@ -305,14 +305,15 @@ class HybridNet(nn.Module):
         cnn_medium = self.cnn_medium(x_t)
         cnn_cat = torch.cat([cnn_short, cnn_medium], dim=1)
         cnn_feat = self.conv_fuse(cnn_cat)
-        cnn_vec = torch.mean(cnn_feat, dim=2)  # global average over time
+        seq_feat = cnn_feat.transpose(1, 2)  # (batch_size, lookback_days, hidden_dim)
 
-        gru_out, _ = self.gru(x)
-        gru_vec = gru_out[:, -1, :]
+        gru_out, _ = self.gru(seq_feat)
+        last_state = gru_out[:, -1, :]
 
-        fusion_input = torch.cat([cnn_vec, gru_vec], dim=1)
-        alpha = self.gate(fusion_input)  # (batch_size, 1)
-        fused = alpha * gru_vec + (1.0 - alpha) * cnn_vec
+        attn_scores = self.attention(gru_out).squeeze(-1)
+        attn_weights = torch.softmax(attn_scores, dim=1)
+        context = torch.sum(gru_out * attn_weights.unsqueeze(-1), dim=1)
 
+        fused = torch.cat([last_state, context], dim=1)
         logits = self.head(fused)
         return torch.sigmoid(logits)

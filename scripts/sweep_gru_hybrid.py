@@ -228,6 +228,8 @@ def main():
 
     num_failed = 0
     num_skipped = 0
+    num_completed = 0
+    cancelled = False
 
     for run_idx, (lb, lr, dropout, hdim, bsz, epochs, pat) in enumerate(combos, start=1):
         prefix = f"{args.tag}_"
@@ -270,19 +272,31 @@ def main():
         if args.dry_run:
             continue
 
-        completed = subprocess.run(cmd, cwd=ROOT)
+        try:
+            completed = subprocess.run(cmd, cwd=ROOT)
+        except KeyboardInterrupt:
+            print("\nInterrupted by user (Ctrl+C). Stopping sweep cleanly.")
+            cancelled = True
+            break
+
         if completed.returncode != 0:
             print(f"Run failed with code {completed.returncode}")
             num_failed += 1
             if not args.continue_on_error:
                 print("Stopping sweep due to failure.")
                 break
+        else:
+            num_completed += 1
 
         if args.sleep_seconds > 0:
             time.sleep(args.sleep_seconds)
 
     print()
-    print("Sweep finished.")
+    if cancelled:
+        print("Sweep cancelled by user.")
+    else:
+        print("Sweep finished.")
+    print(f"Completed runs: {num_completed}")
     print(f"Failed runs: {num_failed}")
     print(f"Skipped runs: {num_skipped}")
     print("Next: rank reports with:")
