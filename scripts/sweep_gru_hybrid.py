@@ -31,6 +31,15 @@ from jellyfish.settings import (
 
 
 PRESETS = {
+    "focused": {
+        "lookback_days": [14, 21],
+        "learning_rates": [0.001, 0.0005],
+        "dropouts": [0.2],
+        "hybrid_hidden_dims": [96],
+        "batch_sizes": [32],
+        "epoch_options": [80],
+        "patiences": [10],
+    },
     "quick": {
         "lookback_days": [DEFAULT_LOOKBACK_DAYS],
         "learning_rates": [0.001, 0.0005],
@@ -81,7 +90,7 @@ def dedupe_keep_order(values):
 
 def main():
     parser = argparse.ArgumentParser(description="Large GRU/Hybrid sweep runner")
-    parser.add_argument("--preset", type=str, default="standard", choices=sorted(PRESETS.keys()))
+    parser.add_argument("--preset", type=str, default="focused", choices=sorted(PRESETS.keys()))
     parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK_DAYS, help="Single lookback override")
     parser.add_argument("--lookback-days-list", type=str, default="", help="Comma list override, e.g. 7,14,21")
     parser.add_argument("--weather-csv-path", type=str, default=DEFAULT_WEATHER_CSV_PATH)
@@ -101,6 +110,7 @@ def main():
 
     parser.add_argument("--reports-dir", type=str, default="reports")
     parser.add_argument("--tag", type=str, default="sweep")
+    parser.add_argument("--models", type=str, default="GRU,Hybrid", help="Comma-separated models to train")
     parser.add_argument("--max-runs", type=int, default=0, help="0 means run all combinations")
     parser.add_argument("--sample-runs", type=int, default=0, help="Randomly sample this many runs from full grid (0=all)")
     parser.add_argument("--shuffle", action="store_true", help="Shuffle run order")
@@ -195,6 +205,7 @@ def main():
         "use_integrated_data": bool(args.use_integrated_data),
         "include_live_xml": not bool(args.disable_live_xml),
         "weather_csv_path": args.weather_csv_path,
+        "models": args.models,
         "grid": {
             "lookback_days": lookback_days_list,
             "learning_rates": learning_rates,
@@ -245,6 +256,7 @@ def main():
             "--num-epochs", str(epochs),
             "--patience", str(pat),
             "--hybrid-hidden-dim", str(hdim),
+            "--models", args.models,
             "--report-path", report_path,
         ]
 

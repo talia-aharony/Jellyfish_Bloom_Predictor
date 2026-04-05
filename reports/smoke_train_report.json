@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-04-05T13:16:50",
+  "config": {
+    "lookback_days": 7,
+    "use_integrated_data": false,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "dropout_prob": 0.3,
+    "num_epochs": 1,
+    "patience": 1,
+    "hybrid_hidden_dim": 64,
+    "model_names": [
+      "GRU"
+    ],
+    "threshold_selection_metric": "f1_on_validation",
+    "n_features_per_day": 11
+  },
+  "results": {
+    "GRU": {
+      "accuracy": 0.5539906103286385,
+      "precision": 0.39723320158102765,
+      "recall": 0.7282608695652174,
+      "f1": 0.5140664961636828,
+      "auc": 0.6466521152039721,
+      "threshold": 0.33,
+      "val_best_f1": 0.5497907949790795,
+      "confusion_matrix": [
+        [
+          813,
+          915
+        ],
+        [
+          225,
+          603
+        ]
+      ]
+    }
+  }
+}

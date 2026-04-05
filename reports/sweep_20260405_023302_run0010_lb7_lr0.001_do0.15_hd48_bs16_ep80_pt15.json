@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-04-05T11:56:55",
+  "config": {
+    "lookback_days": 7,
+    "use_integrated_data": true,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "dropout_prob": 0.15,
+    "num_epochs": 80,
+    "patience": 15,
+    "hybrid_hidden_dim": 48,
+    "threshold_selection_metric": "f1_on_validation",
+    "n_features_per_day": 33
+  },
+  "results": {
+    "Baseline": {
+      "accuracy": 0.5954616588419406,
+      "precision": 0.4211332312404288,
+      "recall": 0.6642512077294686,
+      "f1": 0.5154639175257731,
+      "auc": 0.6549800668724279,
+      "threshold": 0.28,
+      "val_best_f1": 0.5611775528978841,
+      "confusion_matrix": [
+        [
+          972,
+          756
+        ],
+        [
+          278,
+          550
+        ]
+      ]
+    },
+    "GRU": {
+      "accuracy": 0.5512519561815337,
+      "precision": 0.4038577456298975,
+      "recall": 0.8091787439613527,
+      "f1": 0.5388017691998391,
+      "auc": 0.6720567185543032,
+      "threshold": 0.24000000000000002,
+      "val_best_f1": 0.570048309178744,
+      "confusion_matrix": [
+        [
+          739,
+          989
+        ],
+        [
+          158,
+          670
+        ]
+      ]
+    },
+    "Hybrid": {
+      "accuracy": 0.6095461658841941,
+      "precision": 0.43599397590361444,
+      "recall": 0.6992753623188406,
+      "f1": 0.5371057513914657,
+      "auc": 0.6704167086017176,
+      "threshold": 0.31,
+      "val_best_f1": 0.564871194379391,
+      "confusion_matrix": [
+        [
+          979,
+          749
+        ],
+        [
+          249,
+          579
+        ]
+      ]
+    }
+  }
+}

@@ -235,37 +235,63 @@ class Conv1DNet(nn.Module):
 
 
 class HybridNet(nn.Module):
-    """Lightweight Hybrid CNN + LSTM for faster training/inference.
+    """Task-fitted hybrid with justified complexity for bloom forecasting.
 
-    Architecture:
-    - Single temporal CNN block for local pattern extraction
-    - Single-layer (unidirectional) LSTM for sequence modeling
-    - Small MLP head for binary prediction
+    Rationale:
+    - Local short-term signals (recent changes/spikes) are captured by temporal CNNs.
+    - Longer temporal dynamics are captured by a GRU branch.
+    - A learned gate fuses both views per sample (instead of blindly stacking depth).
 
-    Input: (batch_size, lookback_days, 11 features)
+    This keeps model complexity meaningful: each branch maps to a distinct temporal
+    behavior expected in jellyfish bloom patterns.
+
+    Input: (batch_size, lookback_days, n_features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
 
     def __init__(self, input_dim, hidden_dim=64, dropout_prob=0.3):
         super(HybridNet, self).__init__()
 
-        self.cnn_in = nn.Sequential(
-            nn.Conv1d(input_dim, hidden_dim, kernel_size=3, padding=1),
-            nn.BatchNorm1d(hidden_dim),
+        self.cnn_short = nn.Sequential(
+            nn.Conv1d(input_dim, hidden_dim // 2, kernel_size=3, padding=1),
+            nn.BatchNorm1d(hidden_dim // 2),
             nn.ReLU(),
             nn.Dropout(p=dropout_prob),
         )
 
-        self.lstm = nn.LSTM(
-            input_size=hidden_dim,
+        self.cnn_medium = nn.Sequential(
+            nn.Conv1d(input_dim, hidden_dim // 2, kernel_size=5, padding=2),
+            nn.BatchNorm1d(hidden_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
+        )
+
+        self.conv_fuse = nn.Sequential(
+            nn.Conv1d(hidden_dim, hidden_dim, kernel_size=1),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+        )
+
+        self.gru = nn.GRU(
+            input_size=input_dim,
             hidden_size=hidden_dim,
             num_layers=1,
             batch_first=True,
-            bidirectional=False,
+        )
+
+        self.gate = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid(),
         )
 
         self.head = nn.Sequential(
-            nn.Linear(hidden_dim, 32),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
+            nn.Linear(hidden_dim // 2, 32),
             nn.ReLU(),
             nn.Dropout(p=dropout_prob),
             nn.Linear(32, 1),
@@ -273,12 +299,20 @@ class HybridNet(nn.Module):
 
     def forward(self, x):
         # x shape: (batch_size, lookback_days, input_dim)
-        x = x.transpose(1, 2)  # (batch_size, input_dim, lookback_days)
-        x = self.cnn_in(x)
-        x = x.transpose(1, 2)  # (batch_size, lookback_days, hidden_dim)
+        x_t = x.transpose(1, 2)  # (batch_size, input_dim, lookback_days)
 
-        lstm_out, _ = self.lstm(x)
-        last_output = lstm_out[:, -1, :]
+        cnn_short = self.cnn_short(x_t)
+        cnn_medium = self.cnn_medium(x_t)
+        cnn_cat = torch.cat([cnn_short, cnn_medium], dim=1)
+        cnn_feat = self.conv_fuse(cnn_cat)
+        cnn_vec = torch.mean(cnn_feat, dim=2)  # global average over time
 
-        logits = self.head(last_output)
+        gru_out, _ = self.gru(x)
+        gru_vec = gru_out[:, -1, :]
+
+        fusion_input = torch.cat([cnn_vec, gru_vec], dim=1)
+        alpha = self.gate(fusion_input)  # (batch_size, 1)
+        fused = alpha * gru_vec + (1.0 - alpha) * cnn_vec
+
+        logits = self.head(fused)
         return torch.sigmoid(logits)

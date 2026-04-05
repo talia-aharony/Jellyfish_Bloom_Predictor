@@ -408,6 +408,7 @@ def train_all_models(
     num_epochs=NUM_EPOCHS,
     patience=DEFAULT_PATIENCE,
     hybrid_hidden_dim=DEFAULT_HYBRID_HIDDEN_DIM,
+    model_names=None,
     report_path=DEFAULT_REPORT_PATH,
 ):
     """Main training function"""
@@ -427,6 +428,7 @@ def train_all_models(
         'num_epochs': int(num_epochs),
         'patience': int(patience),
         'hybrid_hidden_dim': int(hybrid_hidden_dim),
+        'model_names': list(model_names) if model_names is not None else ['GRU', 'Hybrid'],
         'threshold_selection_metric': 'f1_on_validation',
     }
 
@@ -501,58 +503,61 @@ def train_all_models(
     
     results = {}
     
-    # Baseline
-    print("BASELINE: Logistic Regression")
-    print("-" * 90)
+    # # Baseline
+    # print("BASELINE: Logistic Regression")
+    # print("-" * 90)
     
-    X_engineered = create_engineered_features_forecasting(X, lookback=lookback_days)
-    X_eng_tensor = torch.FloatTensor(X_engineered)
-    mean_eng = X_eng_tensor.mean(dim=0)
-    std_eng = X_eng_tensor.std(dim=0)
-    X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
+    # X_engineered = create_engineered_features_forecasting(X, lookback=lookback_days)
+    # X_eng_tensor = torch.FloatTensor(X_engineered)
+    # mean_eng = X_eng_tensor.mean(dim=0)
+    # std_eng = X_eng_tensor.std(dim=0)
+    # X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
     
-    baseline_dataset = TensorDataset(X_eng_normalized, y_tensor)
-    train_dataset_bl, val_dataset_bl, test_dataset_bl = random_split(
-        baseline_dataset, [train_size, val_size, test_size],
-        generator=torch.Generator().manual_seed(42)
-    )
+    # baseline_dataset = TensorDataset(X_eng_normalized, y_tensor)
+    # train_dataset_bl, val_dataset_bl, test_dataset_bl = random_split(
+    #     baseline_dataset, [train_size, val_size, test_size],
+    #     generator=torch.Generator().manual_seed(42)
+    # )
     
-    train_loader_bl = DataLoader(train_dataset_bl, batch_size=batch_size, shuffle=True)
-    val_loader_bl = DataLoader(val_dataset_bl, batch_size=batch_size, shuffle=False)
-    test_loader_bl = DataLoader(test_dataset_bl, batch_size=batch_size, shuffle=False)
+    # train_loader_bl = DataLoader(train_dataset_bl, batch_size=batch_size, shuffle=True)
+    # val_loader_bl = DataLoader(val_dataset_bl, batch_size=batch_size, shuffle=False)
+    # test_loader_bl = DataLoader(test_dataset_bl, batch_size=batch_size, shuffle=False)
     
-    baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
-    baseline_trainer = Trainer(baseline_model, device=device, learning_rate=learning_rate, model_id='baseline')
+    # baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
+    # baseline_trainer = Trainer(baseline_model, device=device, learning_rate=learning_rate, model_id='baseline')
     
-    start_time = time.time()
-    baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=num_epochs, patience=patience)
-    baseline_time = time.time() - start_time
+    # start_time = time.time()
+    # baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=num_epochs, patience=patience)
+    # baseline_time = time.time() - start_time
     
-    baseline_best_threshold, baseline_val_best_f1 = baseline_trainer.find_best_threshold(val_loader_bl)
-    baseline_metrics = baseline_trainer.test(test_loader_bl, threshold=baseline_best_threshold)
-    baseline_metrics['val_best_f1'] = baseline_val_best_f1
+    # baseline_best_threshold, baseline_val_best_f1 = baseline_trainer.find_best_threshold(val_loader_bl)
+    # baseline_metrics = baseline_trainer.test(test_loader_bl, threshold=baseline_best_threshold)
+    # baseline_metrics['val_best_f1'] = baseline_val_best_f1
     
-    print(
-        f"\nResults: Acc={baseline_metrics['accuracy']:.4f}, "
-        f"F1={baseline_metrics['f1']:.4f}, "
-        f"AUC={baseline_metrics['auc']:.4f}, "
-        f"Threshold={baseline_metrics['threshold']:.2f}"
-    )
-    print(f"Saving model...")
-    torch.save(baseline_model.state_dict(), 'baseline_model.pth')
+    # print(
+    #     f"\nResults: Acc={baseline_metrics['accuracy']:.4f}, "
+    #     f"F1={baseline_metrics['f1']:.4f}, "
+    #     f"AUC={baseline_metrics['auc']:.4f}, "
+    #     f"Threshold={baseline_metrics['threshold']:.2f}"
+    # )
+    # print(f"Saving model...")
+    # torch.save(baseline_model.state_dict(), 'baseline_model.pth')
     
-    plot_training_history(baseline_trainer, 'Baseline')
-    results['Baseline'] = baseline_metrics
-    print()
+    # plot_training_history(baseline_trainer, 'Baseline')
+    # results['Baseline'] = baseline_metrics
+    # print()
     
     # Neural networks
-    models = {
-        # 'Feedforward': FeedforwardNet(input_dim=lookback_days * n_features, dropout_prob=dropout_prob),
-        # 'LSTM': LSTMNet(input_dim=n_features, dropout_prob=dropout_prob),
+    requested_models = list(model_names) if model_names is not None else ['GRU', 'Hybrid']
+    allowed_models = {
         'GRU': GRUNet(input_dim=n_features, dropout_prob=dropout_prob),
-        # 'Conv1D': Conv1DNet(input_dim=n_features, dropout_prob=dropout_prob),
-        'Hybrid': HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob)
+        'Hybrid': HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob),
     }
+    models = {}
+    for name in requested_models:
+        if name not in allowed_models:
+            raise ValueError(f"Unsupported model '{name}'. Supported models: {sorted(allowed_models.keys())}")
+        models[name] = allowed_models[name]
     
     for model_name, model in models.items():
         print(f"\n{model_name}")
@@ -596,12 +601,8 @@ def train_all_models(
         )
     
     print("\n✓ Training complete! Model weights saved:")
-    print("  - baseline_model.pth")
-    print("  - feedforward_model.pth")
-    print("  - lstm_model.pth")
-    print("  - gru_model.pth")
-    print("  - conv1d_model.pth")
-    print("  - hybrid_model.pth")
+    for model_name in sorted(results.keys()):
+        print(f"  - {model_name.lower()}_model.pth")
     print("=" * 100)
 
     save_training_report(results, config, report_path)
@@ -619,9 +620,12 @@ if __name__ == '__main__':
     parser.add_argument('--num-epochs', type=int, default=NUM_EPOCHS, help=f'Number of epochs (default: {NUM_EPOCHS})')
     parser.add_argument('--patience', type=int, default=15, help='Early stopping patience (default: 15)')
     parser.add_argument('--hybrid-hidden-dim', type=int, default=96, help='Hybrid model hidden dimension (default: 96)')
+    parser.add_argument('--models', type=str, default='GRU,Hybrid', help='Comma-separated models to train (default: GRU,Hybrid)')
     parser.add_argument('--report-path', type=str, default='training_report_latest.json', help='Output JSON path for training report')
 
     args = parser.parse_args()
+
+    model_names = [m.strip() for m in args.models.split(',') if m.strip()]
 
     train_all_models(
         lookback_days=args.lookback_days,
@@ -634,5 +638,6 @@ if __name__ == '__main__':
         num_epochs=args.num_epochs,
         patience=args.patience,
         hybrid_hidden_dim=args.hybrid_hidden_dim,
+        model_names=model_names,
         report_path=args.report_path,
     )

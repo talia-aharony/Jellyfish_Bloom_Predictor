@@ -35,8 +35,11 @@ if __name__ == "__main__":
     parser.add_argument('--num-epochs', type=int, default=DEFAULT_NUM_EPOCHS)
     parser.add_argument('--patience', type=int, default=DEFAULT_PATIENCE)
     parser.add_argument('--hybrid-hidden-dim', type=int, default=DEFAULT_HYBRID_HIDDEN_DIM)
+    parser.add_argument('--models', type=str, default='GRU,Hybrid')
     parser.add_argument('--report-path', type=str, default=DEFAULT_REPORT_PATH)
     args = parser.parse_args()
+
+    model_names = [m.strip() for m in args.models.split(',') if m.strip()]
 
     train_all_models(
         lookback_days=args.lookback_days,
@@ -49,5 +52,6 @@ if __name__ == "__main__":
         num_epochs=args.num_epochs,
         patience=args.patience,
         hybrid_hidden_dim=args.hybrid_hidden_dim,
+        model_names=model_names,
         report_path=args.report_path,
     )
