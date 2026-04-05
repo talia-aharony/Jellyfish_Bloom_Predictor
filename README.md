@@ -44,13 +44,13 @@ python -m pip install -r requirements.txt
 3. Train models:
 
 ```bash
-python scripts/train.py
+python scripts/train.py --lookback-days 7
 ```
 
 4. Run prediction example:
 
 ```bash
-python scripts/predict.py
+python scripts/predict.py --lookback-days 7
 ```
 
 5. Run model evaluation:
@@ -65,6 +65,7 @@ Use the direct training script when tuning hyperparameters:
 
 ```bash
 python jellyfish/train.py \
+	--lookback-days 7 \
 	--batch-size 32 \
 	--learning-rate 0.001 \
 	--dropout-prob 0.35 \
@@ -75,7 +76,7 @@ python jellyfish/train.py \
 ```
 
 Each run now saves a JSON report containing:
-- Training configuration (`batch_size`, `learning_rate`, `dropout_prob`, `num_epochs`, `patience`, `hybrid_hidden_dim`)
+- Training configuration (`lookback_days`, `batch_size`, `learning_rate`, `dropout_prob`, `num_epochs`, `patience`, `hybrid_hidden_dim`)
 - Model metrics (`accuracy`, `precision`, `recall`, `f1`, `auc`, confusion matrix)
 
 ### Suggested experiment grid for HybridNet
@@ -91,6 +92,14 @@ Example run names:
 
 ```bash
 python jellyfish/train.py --learning-rate 0.0005 --dropout-prob 0.35 --hybrid-hidden-dim 128 --report-path reports/hybrid_lr5e4_do35_hd128.json
+```
+
+Lookback sweep example:
+
+```bash
+python jellyfish/train.py --lookback-days 7  --report-path reports/hybrid_lb7.json
+python jellyfish/train.py --lookback-days 14 --report-path reports/hybrid_lb14.json
+python jellyfish/train.py --lookback-days 21 --report-path reports/hybrid_lb21.json
 ```
 
 ### How to comment on tuning in your report

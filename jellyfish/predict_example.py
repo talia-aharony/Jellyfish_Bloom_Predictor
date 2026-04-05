@@ -69,7 +69,7 @@ def get_user_inputs(metadata):
     return beach_id, days_ahead
 
 
-def main(days_ahead=None, beach_id=None):
+def main(days_ahead=None, beach_id=None, lookback_days=7):
     """Main prediction example"""
     
     print("=" * 80)
@@ -92,7 +92,7 @@ def main(days_ahead=None, beach_id=None):
     
     print("STEP 2: Load Data Cache")
     print("-" * 80)
-    predictor.load_data_cache(lookback_days=7, forecast_days=1)
+    predictor.load_data_cache(lookback_days=lookback_days, forecast_days=1)
     print()
     
     # =========================================================================
@@ -324,5 +324,11 @@ if __name__ == '__main__':
         default=None,
         help="Beach ID to target for prediction (interactive if not provided)",
     )
+    parser.add_argument(
+        "--lookback-days",
+        type=int,
+        default=7,
+        help="Historical input window length in days (default: 7)",
+    )
     args = parser.parse_args()
-    main(days_ahead=args.days_ahead, beach_id=args.beach_id)
+    main(days_ahead=args.days_ahead, beach_id=args.beach_id, lookback_days=args.lookback_days)

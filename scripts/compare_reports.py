@@ -45,6 +45,8 @@ def build_rows(paths: List[str], model_name: str) -> List[Dict[str, Any]]:
             "recall": float(metrics.get("recall", 0.0)),
             "f1": float(metrics.get("f1", 0.0)),
             "auc": float(metrics.get("auc", 0.0)),
+            "threshold": float(metrics.get("threshold", 0.5)),
+            "val_best_f1": float(metrics.get("val_best_f1", 0.0)),
             "batch_size": config.get("batch_size", "-"),
             "learning_rate": config.get("learning_rate", "-"),
             "dropout_prob": config.get("dropout_prob", "-"),
@@ -62,6 +64,8 @@ def format_row(row: Dict[str, Any]) -> str:
         f"{row['file']:<36} "
         f"{row['f1']:<8.4f} "
         f"{row['auc']:<8.4f} "
+        f"{row['threshold']:<8.2f} "
+        f"{row['val_best_f1']:<8.4f} "
         f"{row['accuracy']:<8.4f} "
         f"{str(row['learning_rate']):<10} "
         f"{str(row['dropout_prob']):<8} "
@@ -125,9 +129,9 @@ def main() -> None:
     print(f"Total runs considered: {len(rows)}")
     print()
     print(
-        f"{'Report File':<36} {'F1':<8} {'AUC':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
+        f"{'Report File':<36} {'F1':<8} {'AUC':<8} {'Thr':<8} {'ValF1':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
     )
-    print("-" * 104)
+    print("-" * 124)
     for row in top_rows:
         print(format_row(row))
 
@@ -138,6 +142,7 @@ def main() -> None:
     print(f"Path: {best['path']}")
     print(f"Timestamp: {best['timestamp']}")
     print(f"F1: {best['f1']:.4f}, AUC: {best['auc']:.4f}, Accuracy: {best['accuracy']:.4f}")
+    print(f"Threshold: {best['threshold']:.2f}, Validation-best F1: {best['val_best_f1']:.4f}")
     print(
         "Config: "
         f"lr={best['learning_rate']}, "

@@ -62,6 +62,8 @@ def save_training_report(results, config, output_path):
             'recall': float(metrics['recall']),
             'f1': float(metrics['f1']),
             'auc': float(metrics['auc']),
+            'threshold': float(metrics.get('threshold', 0.5)),
+            'val_best_f1': float(metrics.get('val_best_f1', 0.0)),
             'confusion_matrix': metrics['confusion_matrix'].tolist(),
         }
 
@@ -77,7 +79,7 @@ def save_training_report(results, config, output_path):
     print(f"✓ Saved training report: {output_path}")
 
 
-def create_engineered_features_forecasting(X, lookback=7):
+def create_engineered_features_forecasting(X, lookback=14):
     """Create engineered features for baseline model"""
     n_samples, lookback, n_features = X.shape
     engineered_features = []
@@ -238,51 +240,82 @@ class Trainer:
                         self.model.load_state_dict(self.best_state_dict)
                     break
     
-    def test(self, test_loader):
-        """Test on test set"""
+    def _collect_predictions(self, data_loader):
+        """Collect probabilities and labels from a data loader."""
         self.model.eval()
-        
+
         all_preds = []
         all_labels = []
-        
+
         with torch.no_grad():
-            for X_batch, y_batch in test_loader:
+            for X_batch, y_batch in data_loader:
                 X_batch = X_batch.to(self.device)
                 outputs = self.model(X_batch)
-                
+
                 all_preds.extend(outputs.detach().cpu().view(-1).tolist())
                 all_labels.extend(y_batch.detach().cpu().view(-1).tolist())
-        
+
         all_preds = np.array(all_preds)
         all_labels = np.array(all_labels)
-        all_preds_binary = (all_preds > 0.5).astype(int)
-        
+        return all_preds, all_labels
+
+    @staticmethod
+    def _compute_classification_metrics(all_labels, all_preds, threshold=0.5):
+        """Compute thresholded classification metrics from probabilities."""
+        all_preds_binary = (all_preds >= threshold).astype(int)
+
         accuracy = np.mean(all_preds_binary == all_labels)
-        
+
         tp = np.sum((all_preds_binary == 1) & (all_labels == 1))
         fp = np.sum((all_preds_binary == 1) & (all_labels == 0))
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        
+
         fn = np.sum((all_preds_binary == 0) & (all_labels == 1))
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        
+
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        
-        auc = self._compute_auc(all_labels, all_preds)
-        
+
         tn = np.sum((all_preds_binary == 0) & (all_labels == 0))
         cm = np.array([[tn, fp], [fn, tp]])
-        
+
         return {
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
             'f1': f1,
-            'auc': auc,
             'confusion_matrix': cm,
             'predictions': all_preds,
-            'labels': all_labels
+            'labels': all_labels,
+            'threshold': threshold,
         }
+
+    def find_best_threshold(self, val_loader):
+        """Find probability threshold that maximizes validation F1."""
+        all_preds, all_labels = self._collect_predictions(val_loader)
+
+        best_threshold = 0.5
+        best_f1 = -1.0
+
+        for threshold in np.linspace(0.1, 0.9, 81):
+            metrics = self._compute_classification_metrics(all_labels, all_preds, threshold=threshold)
+            if metrics['f1'] > best_f1:
+                best_f1 = metrics['f1']
+                best_threshold = float(threshold)
+
+        return best_threshold, best_f1
+
+    def test(self, test_loader, threshold=0.5):
+        """Test on test set with configurable decision threshold."""
+        all_preds, all_labels = self._collect_predictions(test_loader)
+
+        metrics = self._compute_classification_metrics(all_labels, all_preds, threshold=threshold)
+        all_preds = np.array(all_preds)
+        all_labels = np.array(all_labels)
+
+        auc = self._compute_auc(all_labels, all_preds)
+        metrics['auc'] = auc
+
+        return metrics
     
     @staticmethod
     def _compute_auc(y_true, y_pred):
@@ -337,6 +370,7 @@ def plot_training_history(trainer, model_name='Model'):
 
 
 def train_all_models(
+    lookback_days=7,
     batch_size=BATCH_SIZE,
     learning_rate=LEARNING_RATE,
     dropout_prob=DROPOUT_PROB,
@@ -352,12 +386,14 @@ def train_all_models(
     print()
     
     config = {
+        'lookback_days': int(lookback_days),
         'batch_size': int(batch_size),
         'learning_rate': float(learning_rate),
         'dropout_prob': float(dropout_prob),
         'num_epochs': int(num_epochs),
         'patience': int(patience),
         'hybrid_hidden_dim': int(hybrid_hidden_dim),
+        'threshold_selection_metric': 'f1_on_validation',
     }
 
     print("Training configuration:")
@@ -369,7 +405,7 @@ def train_all_models(
     print("1. LOADING DATA")
     print("-" * 100)
     
-    X, y, metadata = load_jellyfish_data(lookback_days=7, forecast_days=1)
+    X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
     print()
     
     # Normalize
@@ -421,7 +457,7 @@ def train_all_models(
     print("BASELINE: Logistic Regression")
     print("-" * 90)
     
-    X_engineered = create_engineered_features_forecasting(X, lookback=7)
+    X_engineered = create_engineered_features_forecasting(X, lookback=lookback_days)
     X_eng_tensor = torch.FloatTensor(X_engineered)
     mean_eng = X_eng_tensor.mean(dim=0)
     std_eng = X_eng_tensor.std(dim=0)
@@ -444,9 +480,16 @@ def train_all_models(
     baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=num_epochs, patience=patience)
     baseline_time = time.time() - start_time
     
-    baseline_metrics = baseline_trainer.test(test_loader_bl)
+    baseline_best_threshold, baseline_val_best_f1 = baseline_trainer.find_best_threshold(val_loader_bl)
+    baseline_metrics = baseline_trainer.test(test_loader_bl, threshold=baseline_best_threshold)
+    baseline_metrics['val_best_f1'] = baseline_val_best_f1
     
-    print(f"\nResults: Acc={baseline_metrics['accuracy']:.4f}, F1={baseline_metrics['f1']:.4f}")
+    print(
+        f"\nResults: Acc={baseline_metrics['accuracy']:.4f}, "
+        f"F1={baseline_metrics['f1']:.4f}, "
+        f"AUC={baseline_metrics['auc']:.4f}, "
+        f"Threshold={baseline_metrics['threshold']:.2f}"
+    )
     print(f"Saving model...")
     torch.save(baseline_model.state_dict(), 'baseline_model.pth')
     
@@ -456,10 +499,10 @@ def train_all_models(
     
     # Neural networks
     models = {
-        'Feedforward': FeedforwardNet(input_dim=7*11, dropout_prob=dropout_prob),
-        'LSTM': LSTMNet(input_dim=11, dropout_prob=dropout_prob),
+        # 'Feedforward': FeedforwardNet(input_dim=lookback_days * 11, dropout_prob=dropout_prob),
+        # 'LSTM': LSTMNet(input_dim=11, dropout_prob=dropout_prob),
         'GRU': GRUNet(input_dim=11, dropout_prob=dropout_prob),
-        'Conv1D': Conv1DNet(input_dim=11, dropout_prob=dropout_prob),
+        # 'Conv1D': Conv1DNet(input_dim=11, dropout_prob=dropout_prob),
         'Hybrid': HybridNet(input_dim=11, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob)
     }
     
@@ -472,9 +515,16 @@ def train_all_models(
         trainer.fit(train_loader, val_loader, epochs=num_epochs, patience=patience)
         train_time = time.time() - start_time
         
-        test_metrics = trainer.test(test_loader)
+        best_threshold, val_best_f1 = trainer.find_best_threshold(val_loader)
+        test_metrics = trainer.test(test_loader, threshold=best_threshold)
+        test_metrics['val_best_f1'] = val_best_f1
         
-        print(f"\nResults: Acc={test_metrics['accuracy']:.4f}, F1={test_metrics['f1']:.4f}")
+        print(
+            f"\nResults: Acc={test_metrics['accuracy']:.4f}, "
+            f"F1={test_metrics['f1']:.4f}, "
+            f"AUC={test_metrics['auc']:.4f}, "
+            f"Threshold={test_metrics['threshold']:.2f}"
+        )
         print(f"Saving model...")
         torch.save(model.state_dict(), f'{model_name.lower()}_model.pth')
         
@@ -487,12 +537,15 @@ def train_all_models(
     print("=" * 100)
     print()
     
-    print(f"{'Model':<20} {'Accuracy':<12} {'F1':<12} {'AUC':<12}")
-    print("-" * 56)
+    print(f"{'Model':<20} {'Accuracy':<12} {'F1':<12} {'AUC':<12} {'Thresh':<8}")
+    print("-" * 66)
     
     for model_name in sorted(results.keys()):
         metrics = results[model_name]
-        print(f"{model_name:<20} {metrics['accuracy']:<12.4f} {metrics['f1']:<12.4f} {metrics['auc']:<12.4f}")
+        print(
+            f"{model_name:<20} {metrics['accuracy']:<12.4f} {metrics['f1']:<12.4f} "
+            f"{metrics['auc']:<12.4f} {metrics['threshold']:<8.2f}"
+        )
     
     print("\n✓ Training complete! Model weights saved:")
     print("  - baseline_model.pth")
@@ -508,6 +561,7 @@ def train_all_models(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train jellyfish forecasting models with tunable hyperparameters')
+    parser.add_argument('--lookback-days', type=int, default=14, help='Historical input window length in days (default: 7)')
     parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help=f'Batch size (default: {BATCH_SIZE})')
     parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help=f'Learning rate (default: {LEARNING_RATE})')
     parser.add_argument('--dropout-prob', type=float, default=DROPOUT_PROB, help=f'Dropout probability (default: {DROPOUT_PROB})')
@@ -519,6 +573,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_all_models(
+        lookback_days=args.lookback_days,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         dropout_prob=args.dropout_prob,

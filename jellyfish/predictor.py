@@ -185,8 +185,19 @@ class JellyfishPredictor:
 
             model = BaselineLogisticRegression(input_dim)
         elif model_name == 'Feedforward':
+            inferred_input_dim = None
+            fc1_weight = state_dict.get('fc1.weight') if isinstance(state_dict, dict) else None
+            if isinstance(fc1_weight, torch.Tensor) and fc1_weight.ndim == 2:
+                inferred_input_dim = int(fc1_weight.shape[1])
+
             if input_dim is None:
-                input_dim = 7 * 11  # 7 days × 11 features
+                input_dim = inferred_input_dim if inferred_input_dim is not None else 7 * 11
+            elif inferred_input_dim is not None and input_dim != inferred_input_dim:
+                print(
+                    f"⚠ Feedforward input_dim={input_dim} does not match checkpoint "
+                    f"({inferred_input_dim}). Using checkpoint value."
+                )
+                input_dim = inferred_input_dim
             model = FeedforwardNet(input_dim)
         elif model_name == 'LSTM':
             model = LSTMNet(input_dim=11)

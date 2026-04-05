@@ -2,7 +2,8 @@
 Neural Network and Baseline Models for Jellyfish Forecasting
 
 All models are implemented with explicit layer definitions in PyTorch.
-Models expect input shape: (batch_size, 7, 11) for sequences or (batch_size, engineered_dim) for baseline.
+Models expect input shape: (batch_size, lookback_days, 11) for sequences or
+(batch_size, engineered_dim) for baseline features.
 """
 
 import numpy as np
@@ -15,13 +16,14 @@ class BaselineLogisticRegression(nn.Module):
     """Baseline: Logistic Regression for Time Series Forecasting
     
     Simple linear model for binary forecasting using engineered temporal features.
-    Uses engineered temporal features from 7-day historical windows:
+    Uses engineered temporal features from lookback-day historical windows:
     - Recent values, trends, volatility, min/max, changes and slopes
     
     This is a strong baseline for temporal data that can learn seasonal patterns
     via feature engineering without requiring RNN architecture.
     
-    Input: (batch_size, engineered_features) where engineered_features = 11 * 10 = 110
+    Input: (batch_size, engineered_features) where engineered_features depend on
+    lookback window length and engineered summary statistics
     Output: (batch_size, 1) - probability of jellyfish presence
     """
     
@@ -41,14 +43,14 @@ class FeedforwardNet(nn.Module):
     
     Flattens temporal sequences and uses dense layers.
     
-    Input: (batch_size, 7, 11) - 7 days × 11 features = 77 values per sample
+    Input: (batch_size, lookback_days, 11) - flattened to input_dim values per sample
     Output: (batch_size, 1) - probability of jellyfish presence
     """
     
     def __init__(self, input_dim, dropout_prob=0.3):
         super(FeedforwardNet, self).__init__()
         
-        # Layer 1: 77 → 128 with BatchNorm
+        # Layer 1: input_dim → 128 with BatchNorm
         self.fc1 = nn.Linear(input_dim, 128)
         self.bn1 = nn.BatchNorm1d(128)
         self.dropout1 = nn.Dropout(p=dropout_prob)
@@ -68,7 +70,7 @@ class FeedforwardNet(nn.Module):
     
     def forward(self, x):
         batch_size = x.size(0)
-        x = x.view(batch_size, -1)  # Flatten (batch, 7, 11) → (batch, 77)
+        x = x.view(batch_size, -1)  # Flatten (batch, lookback_days, 11) → (batch, input_dim)
         
         x = self.fc1(x)
         x = self.bn1(x)
@@ -94,7 +96,7 @@ class LSTMNet(nn.Module):
     
     Processes sequences naturally while capturing long-range dependencies.
     
-    Input: (batch_size, 7 days, 11 features)
+    Input: (batch_size, lookback_days, 11 features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
     
@@ -114,7 +116,7 @@ class LSTMNet(nn.Module):
         self.fc2 = nn.Linear(32, 1)
     
     def forward(self, x):
-        # x shape: (batch_size, 7, 11)
+        # x shape: (batch_size, lookback_days, 11)
         lstm_out, (h_n, c_n) = self.lstm(x)
         
         # Use last LSTM output
@@ -132,7 +134,7 @@ class GRUNet(nn.Module):
     
     Similar to LSTM but with fewer parameters and faster training.
     
-    Input: (batch_size, 7 days, 11 features)
+    Input: (batch_size, lookback_days, 11 features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
     
@@ -152,7 +154,7 @@ class GRUNet(nn.Module):
         self.fc2 = nn.Linear(32, 1)
     
     def forward(self, x):
-        # x shape: (batch_size, 7, 11)
+        # x shape: (batch_size, lookback_days, 11)
         gru_out, h_n = self.gru(x)
         
         # Use last GRU output
@@ -171,7 +173,7 @@ class Conv1DNet(nn.Module):
     Applies convolutional filters over time to detect temporal patterns.
     Useful for capturing local patterns and trends.
     
-    Input: (batch_size, 7 days, 11 features)
+    Input: (batch_size, lookback_days, 11 features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
     
@@ -199,8 +201,8 @@ class Conv1DNet(nn.Module):
         self.fc2 = nn.Linear(32, 1)
     
     def forward(self, x):
-        # x shape: (batch_size, 7, 11)
-        x = x.transpose(1, 2)  # (batch_size, 11, 7) - 11 features, 7 time steps
+        # x shape: (batch_size, lookback_days, 11)
+        x = x.transpose(1, 2)  # (batch_size, 11, lookback_days)
         
         # First conv block
         x = self.conv1(x)
@@ -242,7 +244,7 @@ class HybridNet(nn.Module):
     - Attentive pooling + final time-step fusion
     - Deeper MLP prediction head
 
-    Input: (batch_size, 7 days, 11 features)
+    Input: (batch_size, lookback_days, 11 features)
     Output: (batch_size, 1) - probability of jellyfish presence
     """
 
@@ -310,8 +312,8 @@ class HybridNet(nn.Module):
         )
 
     def forward(self, x):
-        # x shape: (batch_size, 7, 11)
-        x_in = x.transpose(1, 2)  # (batch_size, 11, 7)
+        # x shape: (batch_size, lookback_days, 11)
+        x_in = x.transpose(1, 2)  # (batch_size, 11, lookback_days)
 
         # CNN encoder with residual path
         residual = self.residual_proj(x_in)
