@@ -1,0 +1,179 @@
+{
+  "title": "NEXT-STEPS DIAGNOSTIC LOOP - 20260406_050134",
+  "timestamp": "20260406_050134",
+  "objective": "maximize precision/f1 while keeping recall >= 0.95",
+  "runs": [
+    {
+      "label": "step1_longhorizon_scheduler",
+      "report_path": "reports/next_steps_20260406_050134/step1_longhorizon_scheduler.json",
+      "hyperparameters": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": false,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "dropout_prob": 0.3,
+        "num_epochs": 20,
+        "patience": 10,
+        "hybrid_hidden_dim": 64,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.0,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9186893203883495,
+        "precision": 0.3544007490636704,
+        "f1": 0.5114864864864865,
+        "accuracy": 0.42958579881656805,
+        "auc": 0.6771053803771143,
+        "threshold": 0.135
+      },
+      "curve_points": {
+        "train_losses": 20,
+        "val_losses": 20,
+        "lr_history": 20
+      }
+    },
+    {
+      "label": "step2_recall_weighted",
+      "report_path": "reports/next_steps_20260406_050134/step2_recall_weighted.json",
+      "hyperparameters": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": false,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "dropout_prob": 0.3,
+        "num_epochs": 20,
+        "patience": 10,
+        "hybrid_hidden_dim": 64,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.6,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.933252427184466,
+        "precision": 0.35486848177203506,
+        "f1": 0.5142092945503176,
+        "accuracy": 0.42682445759368837,
+        "auc": 0.6790289701701724,
+        "threshold": 0.188125
+      },
+      "curve_points": {
+        "train_losses": 20,
+        "val_losses": 20,
+        "lr_history": 20
+      }
+    },
+    {
+      "label": "step3_lookback21_structural_weighted",
+      "report_path": "reports/next_steps_20260406_050134/step3_lookback21_structural_weighted.json",
+      "hyperparameters": {
+        "lookback_days": 21,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": false,
+        "batch_size": 24,
+        "learning_rate": 0.0007,
+        "dropout_prob": 0.2,
+        "num_epochs": 20,
+        "patience": 10,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.6,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9719626168224299,
+        "precision": 0.355403673643742,
+        "f1": 0.5204879574601189,
+        "accuracy": 0.3902147971360382,
+        "auc": 0.6976803913058183,
+        "threshold": 0.19874999999999998
+      },
+      "curve_points": {
+        "train_losses": 16,
+        "val_losses": 16,
+        "lr_history": 16
+      }
+    }
+  ],
+  "best_under_recall_constraint": {
+    "label": "step3_lookback21_structural_weighted",
+    "report_path": "reports/next_steps_20260406_050134/step3_lookback21_structural_weighted.json",
+    "hyperparameters": {
+      "lookback_days": 21,
+      "use_integrated_data": true,
+      "weather_csv_path": "None",
+      "include_live_xml": false,
+      "batch_size": 24,
+      "learning_rate": 0.0007,
+      "dropout_prob": 0.2,
+      "num_epochs": 20,
+      "patience": 10,
+      "hybrid_hidden_dim": 128,
+      "model_names": [
+        "JellyfishNet"
+      ],
+      "scheduler_factor": 0.2,
+      "scheduler_patience": 1,
+      "grad_clip_norm": 1.0,
+      "threshold_min": 0.05,
+      "threshold_max": 0.9,
+      "threshold_steps": 81,
+      "threshold_min_precision": 0.2,
+      "threshold_target_recall": 0.95,
+      "positive_class_weight": 1.6,
+      "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+      "n_features_per_day": 33
+    },
+    "metrics": {
+      "recall": 0.9719626168224299,
+      "precision": 0.355403673643742,
+      "f1": 0.5204879574601189,
+      "accuracy": 0.3902147971360382,
+      "auc": 0.6976803913058183,
+      "threshold": 0.19874999999999998
+    },
+    "curve_points": {
+      "train_losses": 16,
+      "val_losses": 16,
+      "lr_history": 16
+    }
+  }
+}

@@ -1,0 +1,11 @@
+==============================================================
+LIVE XML HYPERPARAMETER TUNING - 20260406_050922
+==============================================================
+
+======================================================================
+RUN TITLE: lx1_lb14_hd128_do020_lr7e4_bs24_pw1.4
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=14; hidden=128; dropout=0.2; lr=0.0007; bs=24; epochs=12; patience=8; sched_factor=0.2; sched_patience=1; pos_weight=1.4; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx1.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx1
+======================================================================

@@ -315,3 +315,149 @@ HYPERPARAMETERS: model=JellyfishNet; integrated=true; lookback=21; epochs=20; pa
 REPORT_PATH: reports/next_steps_20260406_050134/step3_lookback21_structural_weighted.json
 OUTPUT_DIR: models/next_steps_20260406_050134/step3
 --------------------------------------------------------------
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 21
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: False
+  batch_size: 24
+  learning_rate: 0.0007
+  dropout_prob: 0.2
+  num_epochs: 20
+  patience: 10
+  hybrid_hidden_dim: 128
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.6
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16753
+Input shape:                    (16753, 21, 33) (samples, days, features)
+Output shape:                   (16753,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5484 (32.7%)
+Negative samples:               11269 (67.3%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11727  Val: 2512  Test: 2514
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/20  train_loss=0.7799  val_loss=0.7655  train_acc=0.6395  val_acc=0.6771  lr=0.000700
+  Epoch   2/20  train_loss=0.7611  val_loss=0.7586  train_acc=0.6556  val_acc=0.6799  lr=0.000700
+  Epoch   3/20  train_loss=0.7538  val_loss=0.7649  train_acc=0.6659  val_acc=0.6871  lr=0.000700
+  Epoch   4/20  train_loss=0.7513  val_loss=0.7576  train_acc=0.6656  val_acc=0.6875  lr=0.000700
+  Epoch   5/20  train_loss=0.7430  val_loss=0.7556  train_acc=0.6737  val_acc=0.6632  lr=0.000700
+  Epoch   6/20  train_loss=0.7358  val_loss=0.7498  train_acc=0.6763  val_acc=0.6771  lr=0.000700
+  Epoch   7/20  train_loss=0.7275  val_loss=0.7576  train_acc=0.6800  val_acc=0.6720  lr=0.000700
+  Epoch   8/20  train_loss=0.7204  val_loss=0.7514  train_acc=0.6888  val_acc=0.6640  lr=0.000140
+  Epoch   9/20  train_loss=0.6856  val_loss=0.7665  train_acc=0.7099  val_acc=0.6752  lr=0.000140
+  Epoch  10/20  train_loss=0.6743  val_loss=0.7649  train_acc=0.7197  val_acc=0.6576  lr=0.000028
+  Epoch  11/20  train_loss=0.6596  val_loss=0.7755  train_acc=0.7334  val_acc=0.6676  lr=0.000028
+  Epoch  12/20  train_loss=0.6561  val_loss=0.7818  train_acc=0.7338  val_acc=0.6688  lr=0.000006
+  Epoch  13/20  train_loss=0.6524  val_loss=0.7831  train_acc=0.7391  val_acc=0.6676  lr=0.000006
+  Epoch  14/20  train_loss=0.6537  val_loss=0.7839  train_acc=0.7367  val_acc=0.6680  lr=0.000001
+  Epoch  15/20  train_loss=0.6544  val_loss=0.7840  train_acc=0.7374  val_acc=0.6680  lr=0.000001
+  Epoch  16/20  train_loss=0.6498  val_loss=0.7842  train_acc=0.7347  val_acc=0.6676  lr=0.000000
+  Early stopping at epoch 16
+
+  Recall=0.9720  Precision=0.3554  F1=0.5205  Acc=0.3902  AUC=0.6977  Thresh=0.20  (173s)
+  Saved → models/next_steps_20260406_050134/step3/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9720     0.3554     0.5205     0.3902     0.6977       0.20
+====================================================================================================
+✓ Saved training report: reports/next_steps_20260406_050134/step3_lookback21_structural_weighted.json
+Wrote reports/next_steps_20260406_050134/manifest_20260406_050134.json
+
+DONE. TERMINAL OUTPUT LOG: reports/next_steps_20260406_050134/terminal_output_20260406_050134.log
+DONE. MANIFEST: reports/next_steps_20260406_050134/manifest_20260406_050134.json
