@@ -1,0 +1,53 @@
+====================================================================================
+SMART HYPERPARAMETER TUNING - 20260406_031754
+====================================================================================
+Strategy: Stratified sampling (60% high-confidence, 30% exploration, 10% edge cases)
+Total configurations: 90
+Objective: Maximize precision/F1 while keeping recall >= 0.95
+Output dir: reports/smart_tuning_20260406_031754
+Transcript: reports/smart_tuning_20260406_031754/terminal_output_20260406_031754.log
+Base config: 12 epochs, patience=8, threshold_target_recall=0.95
+All runs: integrated data + live XML
+====================================================================================
+
+
+[  1/90] st001: lb=23 hd=192 do=0.12 lr=0.000694 bs=21 pw=1.77
+   ✓ model=JellyfishNet recall=0.9707 precision=0.3379 f1=0.5013 auc=0.7156
+
+[  2/90] st002: lb=21 hd=128 do=0.09 lr=0.001000 bs=17 pw=1.65
+   ✓ model=JellyfishNet recall=0.9661 precision=0.3583 f1=0.5228 auc=0.6994
+
+[  3/90] st003: lb=20 hd=128 do=0.11 lr=0.001000 bs=23 pw=1.81
+   ✓ model=JellyfishNet recall=0.9941 precision=0.3356 f1=0.5018 auc=0.7033
+
+[  4/90] st004: lb=24 hd=160 do=0.07 lr=0.000420 bs=14 pw=1.47
+   ✓ model=JellyfishNet recall=0.9660 precision=0.3683 f1=0.5333 auc=0.7015
+
+[  5/90] st005: lb=28 hd=192 do=0.15 lr=0.000667 bs=20 pw=1.67
+   ✓ model=JellyfishNet recall=0.9828 precision=0.3409 f1=0.5062 auc=0.6957
+
+[  6/90] st006: lb=15 hd=160 do=0.17 lr=0.000611 bs=23 pw=1.37
+   ✓ model=JellyfishNet recall=0.9463 precision=0.3598 f1=0.5213 auc=0.7059
+
+[  7/90] st007: lb=25 hd=192 do=0.14 lr=0.000427 bs=19 pw=1.58
+   ✓ model=JellyfishNet recall=0.9593 precision=0.3636 f1=0.5273 auc=0.7022
+
+[  8/90] st008: lb=22 hd=160 do=0.05 lr=0.000364 bs=13 pw=1.51
+   ✓ model=JellyfishNet recall=0.9613 precision=0.3522 f1=0.5156 auc=0.6993
+
+[  9/90] st009: lb=15 hd=224 do=0.09 lr=0.000833 bs=19 pw=1.53
+   ✓ model=JellyfishNet recall=0.9622 precision=0.3487 f1=0.5118 auc=0.7075
+
+[ 10/90] st010: lb=18 hd=160 do=0.07 lr=0.001000 bs=20 pw=1.71
+   ✓ model=JellyfishNet recall=0.9844 precision=0.3464 f1=0.5125 auc=0.7050
+
+[ 11/90] st011: lb=17 hd=128 do=0.16 lr=0.000747 bs=14 pw=1.68
+   ✓ model=JellyfishNet recall=0.9554 precision=0.3535 f1=0.5161 auc=0.7019
+
+[ 12/90] st012: lb=19 hd=192 do=0.12 lr=0.000445 bs=12 pw=1.73
+   ✓ model=JellyfishNet recall=0.9528 precision=0.3659 f1=0.5288 auc=0.6898
+
+[ 13/90] st013: lb=26 hd=128 do=0.09 lr=0.000876 bs=22 pw=1.77
+   ✓ model=JellyfishNet recall=0.9378 precision=0.3541 f1=0.5140 auc=0.6945
+
+[ 14/90] st014: lb=18 hd=160 do=0.13 lr=0.000691 bs=18 pw=1.65

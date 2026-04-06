@@ -265,43 +265,34 @@ def load_live_ims_xml_features(region=None, beach_locations_df=None):
     """
     print("\n🌐 Loading live IMS RSS feeds...")
     
-    # Determine which regions to fetch
-    regions_to_fetch = set()
-    if region == "all":
-        regions_to_fetch = set(REGION_LATITUDE_BOUNDARIES.keys())
-        print(f"  Fetching features for all regions: {regions_to_fetch}")
-    elif region is not None:
-        regions_to_fetch.add(region)
-        print(f"  Fetching features for specified region: {region}")
-    elif beach_locations_df is not None and not beach_locations_df.empty:
-        # Auto-detect regions from beach locations
-        required_cols = {'decimalLatitude', 'beach_id'}
+    # Determine which feed strategy to use.
+    # For integrated beach data we want the actual coast RSS feeds plus the
+    # flood-alert feeds, not city forecasts as a substitute for coast data.
+    fetcher_region = region if region in REGION_LATITUDE_BOUNDARIES else "central_coast"
+    if region is None and beach_locations_df is not None and not beach_locations_df.empty:
+        required_cols = {"decimalLatitude", "beach_id"}
         if required_cols.issubset(beach_locations_df.columns):
-            unique_beaches = beach_locations_df[['beach_id', 'decimalLatitude']].drop_duplicates()
-            for _, row in unique_beaches.iterrows():
-                region_for_beach = get_region_from_latitude(row['decimalLatitude'])
-                regions_to_fetch.add(region_for_beach)
-            print(f"  Auto-detected regions from beach locations: {regions_to_fetch}")
+            unique_beaches = beach_locations_df[["beach_id", "decimalLatitude"]].drop_duplicates()
+            detected_regions = sorted({get_region_from_latitude(row["decimalLatitude"]) for _, row in unique_beaches.iterrows()})
+            print(f"  Auto-detected coast regions from beach locations: {detected_regions}")
         else:
-            print(f"  ⚠️  beach_locations_df missing required columns, using default region")
-            regions_to_fetch.add("central_coast")
+            print("  ⚠️  beach_locations_df missing required columns, using central_coast")
+
+    if region == "all" or region is None:
+        print("  Fetching all coast RSS feeds plus flood alerts and radiation feeds")
     else:
-        # Default fallback
-        regions_to_fetch.add("central_coast")
-        print(f"  Using default region: central_coast")
-    
-    # Fetch data for each region and consolidate
-    all_frames = []
-    for region_name in sorted(regions_to_fetch):
-        print(f"  Fetching {region_name}...")
-        try:
-            fetcher = IMSWeatherFetcher(region=region_name)
-            payload = fetcher.fetch_enriched_forecast()
-            region_daily = _parse_live_ims_payload(payload)
-            all_frames.append(region_daily)
-        except Exception as e:
-            print(f"    ⚠️  Failed to fetch {region_name}: {e}")
-            continue
+        print(f"  Fetching specified coast RSS feed: {fetcher_region} (plus flood alerts/radiation)")
+
+    try:
+        fetcher = IMSWeatherFetcher(region=fetcher_region)
+        payload = fetcher.fetch_enriched_forecast(
+            fetch_all_sea_regions=True,
+            include_global_feeds=True,
+        )
+        all_frames = [_parse_live_ims_payload(payload)]
+    except Exception as e:
+        print(f"    ⚠️  Failed to fetch live RSS data: {e}")
+        all_frames = []
     
     if not all_frames:
         print("⚠️  Live RSS feeds unavailable; continuing without live RSS features")
@@ -313,7 +304,7 @@ def load_live_ims_xml_features(region=None, beach_locations_df=None):
         if not frame.empty and not live_daily.empty and 'date' in frame.columns and 'date' in live_daily.columns:
             live_daily = live_daily.merge(frame, on="date", how="outer")
     
-    print(f"✓ Live RSS daily features loaded: {len(live_daily)} date rows from {len(regions_to_fetch)} region(s)")
+    print(f"✓ Live RSS daily features loaded: {len(live_daily)} date rows from coast RSS feeds")
     return live_daily
 
 

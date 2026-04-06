@@ -47,8 +47,18 @@ class IMSWeatherFetcher:
             print(f"[IMSWeatherFetcher] Failed to fetch {self.region}: {exc}")
             return None
 
-    def fetch_enriched_forecast(self) -> dict:
+    def fetch_enriched_forecast(
+        self,
+        fetch_all_sea_regions: bool = True,
+        include_global_feeds: bool = True,
+    ) -> dict:
         """Fetch RSS coastal forecast plus supplemental RSS feeds.
+
+        Args:
+            fetch_all_sea_regions: If True, fetch all coastal sea feeds into
+                ``sea_rss``. If False, only fetch the currently selected region.
+            include_global_feeds: If True, fetch city/radiation/alerts feeds.
+                Set False to avoid duplicate global fetches across region loops.
 
         Returns:
             Dictionary containing:
@@ -67,33 +77,44 @@ class IMSWeatherFetcher:
             "alerts_rss": {}
         }
 
-        for coast_region, url in self.RSS_FEEDS.items():
+        sea_regions = list(self.RSS_FEEDS.items())
+        if not fetch_all_sea_regions:
+            sea_regions = [(self.region, self.RSS_FEEDS[self.region])]
+
+        for coast_region, url in sea_regions:
             xml_text = self._fetch_xml(url)
             if xml_text:
                 result["sea_rss"][coast_region] = self._parse_sea_rss(xml_text, region=coast_region)
-
-        for city_name, url in self.CITY_RSS_FEEDS.items():
-            xml_text = self._fetch_xml(url)
-            if not xml_text:
-                print(f"[IMSWeatherFetcher] City RSS fetch failed: {city_name}")
-                continue
-
-            parsed_city = self._parse_city_rss(xml_text, city_name=city_name)
-            result["city_rss"][city_name] = parsed_city
-
-            if parsed_city is not None:
-                print(f"[IMSWeatherFetcher] City RSS loaded: {city_name}")
+                print(f"[IMSWeatherFetcher] Sea RSS loaded: {coast_region}")
             else:
-                print(f"[IMSWeatherFetcher] City RSS parse failed: {city_name}")
+                print(f"[IMSWeatherFetcher] Sea RSS fetch failed: {coast_region}")
 
-        radiation_xml = self._fetch_xml(self.RADIATION_RSS_URL)
-        if radiation_xml:
-            result["radiation_rss"] = self._parse_radiation_rss(radiation_xml)
+        if include_global_feeds:
+            for city_name, url in self.CITY_RSS_FEEDS.items():
+                xml_text = self._fetch_xml(url)
+                if not xml_text:
+                    print(f"[IMSWeatherFetcher] City RSS fetch failed: {city_name}")
+                    continue
 
-        for alert_region, url in self.FLOOD_ALERT_RSS_FEEDS.items():
-            xml_text = self._fetch_xml(url)
-            if xml_text:
-                result["alerts_rss"][alert_region] = self._parse_alert_rss(xml_text, region=alert_region)
+                parsed_city = self._parse_city_rss(xml_text, city_name=city_name)
+                result["city_rss"][city_name] = parsed_city
+
+                if parsed_city is not None:
+                    print(f"[IMSWeatherFetcher] City RSS loaded: {city_name}")
+                else:
+                    print(f"[IMSWeatherFetcher] City RSS parse failed: {city_name}")
+
+            radiation_xml = self._fetch_xml(self.RADIATION_RSS_URL)
+            if radiation_xml:
+                result["radiation_rss"] = self._parse_radiation_rss(radiation_xml)
+
+            for alert_region, url in self.FLOOD_ALERT_RSS_FEEDS.items():
+                xml_text = self._fetch_xml(url)
+                if xml_text:
+                    result["alerts_rss"][alert_region] = self._parse_alert_rss(xml_text, region=alert_region)
+                    print(f"[IMSWeatherFetcher] Flood alert RSS loaded: {alert_region}")
+                else:
+                    print(f"[IMSWeatherFetcher] Flood alert RSS fetch failed: {alert_region}")
 
         return result
 

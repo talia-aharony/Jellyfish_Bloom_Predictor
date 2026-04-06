@@ -514,6 +514,7 @@ def train_all_models(
 
     requested = list(model_names) if model_names else [m.strip() for m in DEFAULT_MODEL_NAMES.split(",") if m.strip()]
     available = {
+        "Baseline": BaselineLogisticRegression(input_dim=n_features * lookback_days),
         "GRU": GRUNet(input_dim=n_features, dropout_prob=dropout_prob),
         "JellyfishNet": JellyfishNet(
             input_dim=n_features,
