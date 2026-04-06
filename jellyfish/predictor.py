@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import os
 from datetime import timedelta, date
 from .data_loader import load_jellyfish_data
 from .data_loader_forecasting import (
@@ -23,6 +24,7 @@ from .settings import (
     DEFAULT_WEATHER_CSV_PATH,
     DEFAULT_USE_INTEGRATED_DATA,
     DEFAULT_INCLUDE_LIVE_XML,
+    DEFAULT_HYBRID_HIDDEN_DIM,
 )
 from .models import (
     BaselineLogisticRegression,
@@ -30,7 +32,8 @@ from .models import (
     LSTMNet,
     GRUNet,
     Conv1DNet,
-    HybridNet
+    HybridNet,
+    JellyfishNet,
 )
 
 
@@ -123,6 +126,8 @@ class JellyfishPredictor:
         """
         self.device = torch.device(device)
         self.models = {}
+        self.per_beach_models = {}
+        self.beach_geo_lookup = {}
         self.normalization_stats = {}
         self.data_cache = None
         self.live_rss_lookup = {}
@@ -190,12 +195,66 @@ class JellyfishPredictor:
             'feature_cols': feature_cols,
             'use_integrated_data': bool(use_integrated_data),
         }
+        self.beach_geo_lookup = self._build_beach_geo_lookup()
 
         self.live_rss_lookup = {}
         if use_integrated_data and include_live_xml and daily_citizen is not None:
             self.live_rss_lookup = self._build_live_rss_lookup(daily_citizen)
         
         print(f"✓ Data cache loaded: {X.shape}")
+
+    def _build_beach_geo_lookup(self):
+        """Build per-beach (lat, lon) lookup from cached sequences."""
+        if self.data_cache is None:
+            return {}
+
+        X = self.data_cache.get('X')
+        metadata = self.data_cache.get('metadata')
+        if X is None or metadata is None:
+            return {}
+
+        lookup = {}
+        for idx, row in metadata.reset_index(drop=True).iterrows():
+            beach_id = int(row['beach_id'])
+            if beach_id in lookup:
+                continue
+            try:
+                lat = float(X[idx, -1, 0])
+                lon = float(X[idx, -1, 1])
+            except Exception:
+                continue
+            if np.isfinite(lat) and np.isfinite(lon):
+                lookup[beach_id] = (lat, lon)
+
+        if lookup:
+            print(f"✓ Built beach geo lookup for {len(lookup)} beach(es)")
+        return lookup
+
+    def _nearest_available_beach_model_id(self, model_name, beach_id):
+        """Return nearest beach_id with a loaded per-beach model for the given model_name."""
+        per_beach = self.per_beach_models.get(model_name, {})
+        if not per_beach:
+            return None
+
+        source_coord = self.beach_geo_lookup.get(int(beach_id))
+        if source_coord is None:
+            return None
+
+        src_lat, src_lon = source_coord
+        best_id = None
+        best_dist = None
+
+        for candidate_id in per_beach.keys():
+            candidate_coord = self.beach_geo_lookup.get(int(candidate_id))
+            if candidate_coord is None:
+                continue
+            c_lat, c_lon = candidate_coord
+            dist = float(np.hypot(src_lat - c_lat, src_lon - c_lon))
+            if best_dist is None or dist < best_dist:
+                best_dist = dist
+                best_id = int(candidate_id)
+
+        return best_id
 
     def _build_live_rss_lookup(self, daily_citizen):
         """Build lookup for RSS features by (beach_id, date) for near-term forecast days."""
@@ -295,13 +354,35 @@ class JellyfishPredictor:
         elif model_name == 'Hybrid':
             inferred_input_dim = None
             inferred_hidden_dim = None
-            conv_weight = state_dict.get('cnn_in.0.weight') if isinstance(state_dict, dict) else None
+            conv_weight = None
+            if isinstance(state_dict, dict):
+                conv_weight = state_dict.get('cnn_short.0.weight')
+                if conv_weight is None:
+                    conv_weight = state_dict.get('cnn_in.0.weight')
             if isinstance(conv_weight, torch.Tensor) and conv_weight.ndim == 3:
-                inferred_hidden_dim = int(conv_weight.shape[0])
+                inferred_hidden_dim = int(conv_weight.shape[0] * 2) if 'cnn_short.0.weight' in state_dict else int(conv_weight.shape[0])
                 inferred_input_dim = int(conv_weight.shape[1])
             model = HybridNet(
                 input_dim=inferred_input_dim if inferred_input_dim is not None else 11,
-                hidden_dim=inferred_hidden_dim if inferred_hidden_dim is not None else 96,
+                hidden_dim=inferred_hidden_dim if inferred_hidden_dim is not None else DEFAULT_HYBRID_HIDDEN_DIM,
+            )
+        elif model_name == 'JellyfishNet':
+            inferred_input_dim = None
+            inferred_hidden_dim = None
+            inferred_max_len = None
+            proj_weight = state_dict.get('input_proj.0.weight') if isinstance(state_dict, dict) else None
+            if isinstance(proj_weight, torch.Tensor) and proj_weight.ndim == 2:
+                inferred_hidden_dim = int(proj_weight.shape[0])
+                inferred_input_dim = int(proj_weight.shape[1] - 1)
+            pos_weight = state_dict.get('pos_enc.embed.weight') if isinstance(state_dict, dict) else None
+            if isinstance(pos_weight, torch.Tensor) and pos_weight.ndim == 2:
+                inferred_max_len = int(pos_weight.shape[0])
+            if inferred_max_len is None:
+                inferred_max_len = int(self.normalization_stats.get('lookback_days', DEFAULT_LOOKBACK_DAYS))
+            model = JellyfishNet(
+                input_dim=inferred_input_dim if inferred_input_dim is not None else 11,
+                hidden_dim=inferred_hidden_dim if inferred_hidden_dim is not None else DEFAULT_HYBRID_HIDDEN_DIM,
+                max_len=inferred_max_len,
             )
         else:
             raise ValueError(f"Unknown model: {model_name}")
@@ -313,8 +394,72 @@ class JellyfishPredictor:
         
         self.models[model_name] = model
         print(f"✓ Loaded {model_name} model from {model_path}")
+
+    def load_per_beach_models(self, model_name, models_dir='models'):
+        """Load all per-beach checkpoints named beach_<id>_model.pth."""
+        import re
+
+        if model_name != 'JellyfishNet':
+            raise ValueError("Per-beach loading currently supports JellyfishNet only")
+
+        if not os.path.isdir(models_dir):
+            print(f"⚠ Models directory not found: {models_dir}")
+            return
+
+        loaded = 0
+        self.per_beach_models.setdefault(model_name, {})
+
+        for fname in sorted(os.listdir(models_dir)):
+            match = re.match(r'^beach_(\d+)_model\.pth$', fname)
+            if not match:
+                continue
+            beach_id = int(match.group(1))
+            model_path = os.path.join(models_dir, fname)
+
+            checkpoint = torch.load(model_path, map_location=self.device)
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint and isinstance(checkpoint['model_state_dict'], dict):
+                state_dict = checkpoint['model_state_dict']
+            elif isinstance(checkpoint, dict) and 'state_dict' in checkpoint and isinstance(checkpoint['state_dict'], dict):
+                state_dict = checkpoint['state_dict']
+            else:
+                state_dict = checkpoint
+
+            proj_weight = state_dict.get('input_proj.0.weight') if isinstance(state_dict, dict) else None
+            if not isinstance(proj_weight, torch.Tensor) or proj_weight.ndim != 2:
+                print(f"⚠ Skipping invalid JellyfishNet checkpoint: {model_path}")
+                continue
+
+            inferred_hidden_dim = int(proj_weight.shape[0])
+            inferred_input_dim = int(proj_weight.shape[1] - 1)
+
+            model = JellyfishNet(input_dim=inferred_input_dim, hidden_dim=inferred_hidden_dim)
+            model.load_state_dict(state_dict)
+            model.to(self.device)
+            model.eval()
+
+            self.per_beach_models[model_name][beach_id] = model
+            loaded += 1
+
+        print(f"✓ Loaded {loaded} per-beach {model_name} model(s) from {models_dir}")
+
+    def _get_model(self, model_name, beach_id=None):
+        """Return (model, model_used_label) with fallback:
+        exact per-beach -> nearest-beach model -> global model.
+        """
+        if model_name == 'JellyfishNet' and beach_id is not None:
+            per_beach = self.per_beach_models.get(model_name, {})
+            if int(beach_id) in per_beach:
+                return per_beach[int(beach_id)], f"{model_name} (beach-{int(beach_id)})"
+
+            nearest_id = self._nearest_available_beach_model_id(model_name, int(beach_id))
+            if nearest_id is not None:
+                return per_beach[nearest_id], f"{model_name} (nearby-beach-{nearest_id})"
+
+        if model_name not in self.models:
+            raise ValueError(f"Model {model_name} not loaded. Call load_model() first.")
+        return self.models[model_name], f"{model_name} (global)"
     
-    def predict_sequence(self, X_sequence, model_name, use_baseline=False):
+    def predict_sequence(self, X_sequence, model_name, beach_id=None, return_model_used=False):
         """Predict for a single sequence
         
         Args:
@@ -325,10 +470,7 @@ class JellyfishPredictor:
         Returns:
             probability (float): Probability of jellyfish presence (0-1)
         """
-        if model_name not in self.models:
-            raise ValueError(f"Model {model_name} not loaded. Call load_model() first.")
-        
-        model = self.models[model_name]
+        model, model_used = self._get_model(model_name, beach_id=beach_id)
         
         # Prepare input
         if isinstance(X_sequence, np.ndarray):
@@ -348,7 +490,9 @@ class JellyfishPredictor:
         with torch.no_grad():
             output = model(X_tensor)
             probability = output.cpu().item()
-        
+
+        if return_model_used:
+            return probability, model_used
         return probability
 
     @staticmethod
@@ -534,7 +678,12 @@ class JellyfishPredictor:
             mean = self.normalization_stats['mean']
             std = self.normalization_stats['std']
             X_normalized = (X_tensor - mean) / (std + 1e-8)
-            probability = self.predict_sequence(X_normalized, model_name)
+            probability, model_used = self.predict_sequence(
+                X_normalized,
+                model_name,
+                beach_id=beach_id,
+                return_model_used=True,
+            )
         else:
             # Use baseline with engineered features
             X_eng = create_engineered_features_forecasting(
@@ -545,7 +694,12 @@ class JellyfishPredictor:
             mean_eng = self.normalization_stats['mean_eng']
             std_eng = self.normalization_stats['std_eng']
             X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
-            probability = self.predict_sequence(X_eng_normalized, model_name)
+            probability, model_used = self.predict_sequence(
+                X_eng_normalized,
+                model_name,
+                beach_id=beach_id,
+                return_model_used=True,
+            )
         
         # Determine prediction and confidence
         percentage = probability * 100
@@ -568,6 +722,7 @@ class JellyfishPredictor:
             'percentage': percentage,
             'prediction': prediction,
             'confidence': confidence,
+            'model_used': model_used,
             'actual': match.iloc[0]['jellyfish_observed'] if (len(match) > 0 and 'jellyfish_observed' in match.columns) else None,
             'extrapolated': used_extrapolation,
             'extrapolated_from_date': extrapolated_from_date,

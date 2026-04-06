@@ -164,6 +164,8 @@ Run a grid sweep (multiple train runs, one JSON report per run):
 python scripts/sweep_gru_hybrid.py --use-integrated-data --lookback-days 14
 ```
 
+Each sweep run now also saves its model checkpoints in a unique folder under `models/`, so different hyperparameter runs do not overwrite each other.
+
 Run many more experiments (large preset, shuffled, keep going on failures):
 
 ```bash

@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-04-05T19:36:58",
+  "preset": "jellynet_strong",
+  "seed": 42,
+  "use_integrated_data": true,
+  "include_live_xml": true,
+  "weather_csv_path": "data/IMS/data_202603142120.csv",
+  "models": "JellyfishNet",
+  "grid": {
+    "lookback_days": [
+      14,
+      21,
+      28
+    ],
+    "learning_rates": [
+      0.0007,
+      0.0005,
+      0.0003
+    ],
+    "dropouts": [
+      0.2,
+      0.3,
+      0.35
+    ],
+    "hybrid_hidden_dims": [
+      96,
+      128
+    ],
+    "batch_sizes": [
+      16,
+      32
+    ],
+    "epoch_options": [
+      120
+    ],
+    "patiences": [
+      12,
+      18
+    ]
+  },
+  "model_output_root": "models",
+  "planned_runs": 216
+}

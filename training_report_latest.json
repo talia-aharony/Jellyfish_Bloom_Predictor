@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-04T22:34:59",
+  "timestamp": "2026-04-05T16:51:41",
   "config": {
     "lookback_days": 14,
     "use_integrated_data": false,
@@ -10,65 +10,56 @@
     "dropout_prob": 0.3,
     "num_epochs": 100,
     "patience": 15,
-    "hybrid_hidden_dim": 96,
+    "hybrid_hidden_dim": 64,
+    "model_names": [
+      "GRU",
+      "JellyfishNet"
+    ],
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 5,
+    "grad_clip_norm": 1.0,
+    "threshold_min": 0.1,
+    "threshold_max": 0.9,
+    "threshold_steps": 81,
     "threshold_selection_metric": "f1_on_validation",
     "n_features_per_day": 11
   },
   "results": {
-    "Baseline": {
-      "accuracy": 0.5696252465483235,
-      "precision": 0.4133679428942245,
-      "recall": 0.7730582524271845,
-      "f1": 0.5386892177589853,
-      "auc": 0.6742597158307468,
-      "threshold": 0.27,
-      "val_best_f1": 0.5654664484451719,
-      "confusion_matrix": [
-        [
-          807,
-          904
-        ],
-        [
-          187,
-          637
-        ]
-      ]
-    },
     "GRU": {
-      "accuracy": 0.6307692307692307,
-      "precision": 0.4501779359430605,
-      "recall": 0.6140776699029126,
-      "f1": 0.5195071868583162,
-      "auc": 0.6732262828187683,
-      "threshold": 0.32,
-      "val_best_f1": 0.5738354806739346,
+      "accuracy": 0.5747534516765286,
+      "precision": 0.4152202937249666,
+      "recall": 0.7548543689320388,
+      "f1": 0.5357450473729544,
+      "auc": 0.6736224203185557,
+      "threshold": 0.26,
+      "val_best_f1": 0.566401340594889,
       "confusion_matrix": [
         [
-          1093,
-          618
+          835,
+          876
         ],
         [
-          318,
-          506
+          202,
+          622
         ]
       ]
     },
-    "Hybrid": {
-      "accuracy": 0.6149901380670612,
-      "precision": 0.44251134644478063,
-      "recall": 0.7099514563106796,
-      "f1": 0.5452003727865796,
-      "auc": 0.6850724608898446,
-      "threshold": 0.31,
-      "val_best_f1": 0.5772357723577235,
+    "JellyfishNet": {
+      "accuracy": 0.6220907297830375,
+      "precision": 0.44561688311688313,
+      "recall": 0.6662621359223301,
+      "f1": 0.5340466926070039,
+      "auc": 0.672262360057424,
+      "threshold": 0.33999999999999997,
+      "val_best_f1": 0.5786802030456853,
       "confusion_matrix": [
         [
-          974,
-          737
+          1028,
+          683
         ],
         [
-          239,
-          585
+          275,
+          549
         ]
       ]
     }

@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-04-05T16:22:02",
+  "config": {
+    "lookback_days": 14,
+    "use_integrated_data": false,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "dropout_prob": 0.3,
+    "num_epochs": 1,
+    "patience": 1,
+    "hybrid_hidden_dim": 64,
+    "model_names": [
+      "JellyfishNet"
+    ],
+    "threshold_selection_metric": "f1_on_validation",
+    "n_features_per_day": 11
+  },
+  "results": {
+    "JellyfishNet": {
+      "accuracy": 0.5913214990138067,
+      "precision": 0.42406876790830944,
+      "recall": 0.7184466019417476,
+      "f1": 0.5333333333333333,
+      "auc": 0.6635615208275408,
+      "threshold": 0.33,
+      "val_best_f1": 0.5604821351700386,
+      "confusion_matrix": [
+        [
+          907,
+          804
+        ],
+        [
+          232,
+          592
+        ]
+      ]
+    }
+  }
+}

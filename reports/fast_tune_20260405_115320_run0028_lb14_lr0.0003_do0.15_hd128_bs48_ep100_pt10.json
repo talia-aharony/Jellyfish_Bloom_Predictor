@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-05T17:30:51",
+  "config": {
+    "lookback_days": 14,
+    "use_integrated_data": true,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 48,
+    "learning_rate": 0.0003,
+    "dropout_prob": 0.15,
+    "num_epochs": 100,
+    "patience": 10,
+    "hybrid_hidden_dim": 128,
+    "model_names": [
+      "GRU",
+      "JellyfishNet"
+    ],
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 5,
+    "grad_clip_norm": 1.0,
+    "threshold_min": 0.1,
+    "threshold_max": 0.9,
+    "threshold_steps": 81,
+    "threshold_selection_metric": "f1_on_validation",
+    "n_features_per_day": 33
+  },
+  "results": {
+    "GRU": {
+      "accuracy": 0.6260355029585799,
+      "precision": 0.4496753246753247,
+      "recall": 0.6723300970873787,
+      "f1": 0.5389105058365758,
+      "auc": 0.6846263185668973,
+      "threshold": 0.31,
+      "val_best_f1": 0.5779685264663805,
+      "confusion_matrix": [
+        [
+          1033,
+          678
+        ],
+        [
+          270,
+          554
+        ]
+      ]
+    },
+    "JellyfishNet": {
+      "accuracy": 0.611439842209073,
+      "precision": 0.4390613171839515,
+      "recall": 0.7038834951456311,
+      "f1": 0.5407925407925407,
+      "auc": 0.6833918023298702,
+      "threshold": 0.32,
+      "val_best_f1": 0.5772357723577235,
+      "confusion_matrix": [
+        [
+          970,
+          741
+        ],
+        [
+          244,
+          580
+        ]
+      ]
+    }
+  }
+}

@@ -1,25 +1,47 @@
 """
-Jellyfish Forecasting - Training Script
+jellyfish/train.py
+==================
+Train jellyfish forecasting models and save weights to disk.
 
-Trains baseline and neural network models for jellyfish presence forecasting.
-Saves trained model weights for later use in prediction.
+Two modes
+─────────
+Global training  (default):
+    Trains on all beaches combined.  Produces one model file per architecture.
+    Use as a baseline or as the starting point for per-beach fine-tuning.
+
+Per-beach fine-tuning  (--finetune-per-beach):
+    Loads a pre-trained global JellyfishNet checkpoint and fine-tunes a
+    separate copy for each beach.  Sparse beaches inherit the global model's
+    representations; well-observed beaches can specialise further.
+
+Usage examples
+──────────────
+    # Global training (GRU + JellyfishNet)
+    python -m jellyfish.train
+
+    # Global training with integrated weather CSV
+    python -m jellyfish.train --use-integrated-data
+
+    # Per-beach fine-tuning from a global checkpoint
+    python -m jellyfish.train --finetune-per-beach \\
+        --global-checkpoint models/jellyfishnet_model.pth
 """
 
-import numpy as np
-import time
+import argparse
 import json
+import os
+import sys
+import time
+import warnings
+from datetime import datetime
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset, random_split
-import matplotlib.pyplot as plt
-import warnings
-import os
-import sys
-import argparse
-from datetime import datetime
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 if __package__ in (None, ""):
     ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -39,6 +61,18 @@ if __package__ in (None, ""):
         DEFAULT_PATIENCE,
         DEFAULT_HYBRID_HIDDEN_DIM,
         DEFAULT_REPORT_PATH,
+        DEFAULT_MODEL_NAMES,
+        DEFAULT_OUTPUT_DIR,
+        DEFAULT_FINETUNE_EPOCHS,
+        DEFAULT_FINETUNE_LR,
+        DEFAULT_MIN_SAMPLES_PER_BEACH,
+        DEFAULT_PER_BEACH_PATIENCE,
+        DEFAULT_LR_SCHEDULER_FACTOR,
+        DEFAULT_LR_SCHEDULER_PATIENCE,
+        DEFAULT_GRAD_CLIP_NORM,
+        DEFAULT_THRESHOLD_MIN,
+        DEFAULT_THRESHOLD_MAX,
+        DEFAULT_THRESHOLD_STEPS,
     )
     from jellyfish.models import (
         BaselineLogisticRegression,
@@ -46,7 +80,8 @@ if __package__ in (None, ""):
         LSTMNet,
         GRUNet,
         Conv1DNet,
-        HybridNet
+        HybridNet,
+        JellyfishNet,
     )
 else:
     from .data_loader import load_jellyfish_data
@@ -63,6 +98,18 @@ else:
         DEFAULT_PATIENCE,
         DEFAULT_HYBRID_HIDDEN_DIM,
         DEFAULT_REPORT_PATH,
+        DEFAULT_MODEL_NAMES,
+        DEFAULT_OUTPUT_DIR,
+        DEFAULT_FINETUNE_EPOCHS,
+        DEFAULT_FINETUNE_LR,
+        DEFAULT_MIN_SAMPLES_PER_BEACH,
+        DEFAULT_PER_BEACH_PATIENCE,
+        DEFAULT_LR_SCHEDULER_FACTOR,
+        DEFAULT_LR_SCHEDULER_PATIENCE,
+        DEFAULT_GRAD_CLIP_NORM,
+        DEFAULT_THRESHOLD_MIN,
+        DEFAULT_THRESHOLD_MAX,
+        DEFAULT_THRESHOLD_STEPS,
     )
     from .models import (
         BaselineLogisticRegression,
@@ -70,332 +117,229 @@ else:
         LSTMNet,
         GRUNet,
         Conv1DNet,
-        HybridNet
+        HybridNet,
+        JellyfishNet,
     )
 
-# Hyperparameters
-BATCH_SIZE = DEFAULT_BATCH_SIZE
+BATCH_SIZE    = DEFAULT_BATCH_SIZE
 LEARNING_RATE = DEFAULT_LEARNING_RATE
-DROPOUT_PROB = DEFAULT_DROPOUT_PROB
-NUM_EPOCHS = DEFAULT_NUM_EPOCHS
+DROPOUT_PROB  = DEFAULT_DROPOUT_PROB
+NUM_EPOCHS    = DEFAULT_NUM_EPOCHS
 
 
-def save_training_report(results, config, output_path):
-    """Save training configuration and metrics to JSON for experiment tracking."""
-    serializable_results = {}
-    for model_name, metrics in results.items():
-        serializable_results[model_name] = {
-            'accuracy': float(metrics['accuracy']),
-            'precision': float(metrics['precision']),
-            'recall': float(metrics['recall']),
-            'f1': float(metrics['f1']),
-            'auc': float(metrics['auc']),
-            'threshold': float(metrics.get('threshold', 0.5)),
-            'val_best_f1': float(metrics.get('val_best_f1', 0.0)),
-            'confusion_matrix': metrics['confusion_matrix'].tolist(),
-        }
-
-    payload = {
-        'timestamp': datetime.now().isoformat(timespec='seconds'),
-        'config': config,
-        'results': serializable_results,
-    }
-
-    with open(output_path, 'w') as f:
-        json.dump(payload, f, indent=2)
-
-    print(f"✓ Saved training report: {output_path}")
-
+# ============================================================================
+# Feature engineering (for Baseline logistic regression)
+# ============================================================================
 
 def create_engineered_features_forecasting(X, lookback=DEFAULT_LOOKBACK_DAYS):
-    """Create engineered features for baseline model"""
-    n_samples, lookback, n_features = X.shape
-    engineered_features = []
-    
-    for sample_idx in range(n_samples):
-        seq = X[sample_idx]
-        features_for_sample = []
-        
-        for feat_idx in range(n_features):
-            time_series = seq[:, feat_idx]
-            
-            current = time_series[-1]
-            features_for_sample.append(current)
-            
-            prev = time_series[-2] if lookback >= 2 else time_series[0]
-            features_for_sample.append(prev)
-            
-            prev_3 = time_series[-4] if lookback >= 4 else time_series[0]
-            features_for_sample.append(prev_3)
-            
-            x_vals = np.arange(lookback)
-            coeffs = np.polyfit(x_vals, time_series, 1)
-            trend = coeffs[0]
-            features_for_sample.append(trend)
-            
-            mean_val = np.mean(time_series)
-            features_for_sample.append(mean_val)
-            
-            std_val = np.std(time_series)
-            features_for_sample.append(std_val)
-            
-            min_val = np.min(time_series)
-            max_val = np.max(time_series)
-            features_for_sample.append(min_val)
-            features_for_sample.append(max_val)
-            
-            change_1day = current - prev
-            features_for_sample.append(change_1day)
-            
-            change_3day = current - prev_3
-            features_for_sample.append(change_3day)
-        
-        engineered_features.append(features_for_sample)
-    
-    return np.array(engineered_features, dtype=np.float32)
+    """Flatten sequences into hand-crafted temporal statistics for the baseline."""
+    n_samples, lb, n_features = X.shape
+    out = []
+    for i in range(n_samples):
+        seq = X[i]
+        row = []
+        for f in range(n_features):
+            ts    = seq[:, f]
+            cur   = ts[-1]
+            prev  = ts[-2] if lb >= 2 else ts[0]
+            prev3 = ts[-4] if lb >= 4 else ts[0]
+            trend = np.polyfit(np.arange(lb), ts, 1)[0]
+            row.extend([
+                cur, prev, prev3, trend,
+                ts.mean(), ts.std(), ts.min(), ts.max(),
+                cur - prev, cur - prev3,
+            ])
+        out.append(row)
+    return np.array(out, dtype=np.float32)
 
+
+# ============================================================================
+# Trainer
+# ============================================================================
 
 class Trainer:
-    """Training pipeline for all models"""
-    
-    def __init__(self, model, device='cpu', learning_rate=LEARNING_RATE, model_id='default'):
-        self.model = model.to(device)
-        self.device = device
-        self.model_id = model_id
-        self.best_state_dict = None  # Store best weights in memory
-        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-        self.criterion = nn.BCELoss()
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode='min', factor=0.5, patience=5
+    """Training pipeline shared by all models."""
+
+    def __init__(
+        self,
+        model,
+        device="cpu",
+        learning_rate=LEARNING_RATE,
+        model_id="default",
+        scheduler_factor=DEFAULT_LR_SCHEDULER_FACTOR,
+        scheduler_patience=DEFAULT_LR_SCHEDULER_PATIENCE,
+        grad_clip_norm=DEFAULT_GRAD_CLIP_NORM,
+        threshold_min=DEFAULT_THRESHOLD_MIN,
+        threshold_max=DEFAULT_THRESHOLD_MAX,
+        threshold_steps=DEFAULT_THRESHOLD_STEPS,
+    ):
+        self.model      = model.to(device)
+        self.device     = device
+        self.model_id   = model_id
+        self.grad_clip_norm = float(grad_clip_norm)
+        self.threshold_min = float(threshold_min)
+        self.threshold_max = float(threshold_max)
+        self.threshold_steps = int(threshold_steps)
+        self.best_state = None
+        self.optimizer  = optim.Adam(model.parameters(), lr=learning_rate)
+        self.criterion  = nn.BCELoss()
+        self.scheduler  = optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer,
+            mode="min",
+            factor=float(scheduler_factor),
+            patience=int(scheduler_patience),
         )
-        
         self.train_losses = []
-        self.val_losses = []
-        self.train_accs = []
-        self.val_accs = []
-    
-    def train_epoch(self, train_loader):
-        """Train for one epoch"""
+        self.val_losses   = []
+        self.train_accs   = []
+        self.val_accs     = []
+
+    def train_epoch(self, loader):
         self.model.train()
-        
-        total_loss = 0.0
-        correct = 0
-        total = 0
-        
-        for X_batch, y_batch in train_loader:
-            X_batch = X_batch.to(self.device)
-            y_batch = y_batch.to(self.device).unsqueeze(1)
-            
-            outputs = self.model(X_batch)
-            loss = self.criterion(outputs, y_batch)
-            
+        total_loss = correct = total = 0
+        for X_b, y_b in loader:
+            X_b = X_b.to(self.device)
+            y_b = y_b.to(self.device).unsqueeze(1)
+            out  = self.model(X_b)
+            loss = self.criterion(out, y_b)
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_norm)
             self.optimizer.step()
-            
             total_loss += loss.item()
-            
-            predictions = (outputs > 0.5).float()
-            correct += (predictions == y_batch).sum().item()
-            total += y_batch.size(0)
-        
-        avg_loss = total_loss / len(train_loader)
-        accuracy = correct / total
-        
-        return avg_loss, accuracy
-    
-    def evaluate(self, val_loader):
-        """Evaluate on validation set"""
+            correct    += ((out > 0.5).float() == y_b).sum().item()
+            total      += y_b.size(0)
+        return total_loss / len(loader), correct / total
+
+    def evaluate(self, loader):
         self.model.eval()
-        
-        total_loss = 0.0
-        correct = 0
-        total = 0
-        
+        total_loss = correct = total = 0
         with torch.no_grad():
-            for X_batch, y_batch in val_loader:
-                X_batch = X_batch.to(self.device)
-                y_batch = y_batch.to(self.device).unsqueeze(1)
-                
-                outputs = self.model(X_batch)
-                loss = self.criterion(outputs, y_batch)
-                
+            for X_b, y_b in loader:
+                X_b = X_b.to(self.device)
+                y_b = y_b.to(self.device).unsqueeze(1)
+                out  = self.model(X_b)
+                loss = self.criterion(out, y_b)
                 total_loss += loss.item()
-                
-                predictions = (outputs > 0.5).float()
-                correct += (predictions == y_batch).sum().item()
-                total += y_batch.size(0)
-        
-        avg_loss = total_loss / len(val_loader)
-        accuracy = correct / total
-        
-        return avg_loss, accuracy
-    
-    def fit(self, train_loader, val_loader, epochs=NUM_EPOCHS, patience=15):
-        """Train the model"""
-        
-        best_val_loss = float('inf')
-        patience_counter = 0
-        
+                correct    += ((out > 0.5).float() == y_b).sum().item()
+                total      += y_b.size(0)
+        return total_loss / len(loader), correct / total
+
+    def fit(self, train_loader, val_loader, epochs=NUM_EPOCHS, patience=DEFAULT_PATIENCE):
+        best_val, wait = float("inf"), 0
         for epoch in range(epochs):
-            train_loss, train_acc = self.train_epoch(train_loader)
-            val_loss, val_acc = self.evaluate(val_loader)
-            
-            self.train_losses.append(train_loss)
-            self.val_losses.append(val_loss)
-            self.train_accs.append(train_acc)
-            self.val_accs.append(val_acc)
-            
-            self.scheduler.step(val_loss)
-            
+            tr_loss, tr_acc = self.train_epoch(train_loader)
+            vl_loss, vl_acc = self.evaluate(val_loader)
+            self.scheduler.step(vl_loss)
+            self.train_losses.append(tr_loss)
+            self.val_losses.append(vl_loss)
+            self.train_accs.append(tr_acc)
+            self.val_accs.append(vl_acc)
             if (epoch + 1) % 20 == 0:
-                print(f"Epoch {epoch+1}/{epochs} - "
-                      f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, "
-                      f"Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}")
-            
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                patience_counter = 0
-                # Store best weights in memory (avoid file conflicts)
-                self.best_state_dict = {k: v.clone() for k, v in self.model.state_dict().items()}
+                print(
+                    f"  Epoch {epoch+1:3d}/{epochs}  "
+                    f"train_loss={tr_loss:.4f}  val_loss={vl_loss:.4f}  "
+                    f"train_acc={tr_acc:.4f}  val_acc={vl_acc:.4f}"
+                )
+            if vl_loss < best_val:
+                best_val, wait = vl_loss, 0
+                self.best_state = {k: v.clone() for k, v in self.model.state_dict().items()}
             else:
-                patience_counter += 1
-                if patience_counter >= patience:
-                    print(f"Early stopping at epoch {epoch+1}")
-                    # Restore best weights from memory
-                    if self.best_state_dict is not None:
-                        self.model.load_state_dict(self.best_state_dict)
+                wait += 1
+                if wait >= patience:
+                    print(f"  Early stopping at epoch {epoch + 1}")
                     break
-    
-    def _collect_predictions(self, data_loader):
-        """Collect probabilities and labels from a data loader."""
+        if self.best_state is not None:
+            self.model.load_state_dict(self.best_state)
+
+    def _collect(self, loader):
         self.model.eval()
-
-        all_preds = []
-        all_labels = []
-
+        preds, labels = [], []
         with torch.no_grad():
-            for X_batch, y_batch in data_loader:
-                X_batch = X_batch.to(self.device)
-                outputs = self.model(X_batch)
-
-                all_preds.extend(outputs.detach().cpu().view(-1).tolist())
-                all_labels.extend(y_batch.detach().cpu().view(-1).tolist())
-
-        all_preds = np.array(all_preds)
-        all_labels = np.array(all_labels)
-        return all_preds, all_labels
+            for X_b, y_b in loader:
+                out = self.model(X_b.to(self.device))
+                preds.extend(out.cpu().view(-1).tolist())
+                labels.extend(y_b.view(-1).tolist())
+        return np.array(preds), np.array(labels)
 
     @staticmethod
-    def _compute_classification_metrics(all_labels, all_preds, threshold=0.5):
-        """Compute thresholded classification metrics from probabilities."""
-        all_preds_binary = (all_preds >= threshold).astype(int)
-
-        accuracy = np.mean(all_preds_binary == all_labels)
-
-        tp = np.sum((all_preds_binary == 1) & (all_labels == 1))
-        fp = np.sum((all_preds_binary == 1) & (all_labels == 0))
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-
-        fn = np.sum((all_preds_binary == 0) & (all_labels == 1))
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-        tn = np.sum((all_preds_binary == 0) & (all_labels == 0))
-        cm = np.array([[tn, fp], [fn, tp]])
-
+    def _metrics(labels, preds, threshold=0.5):
+        binary = (preds >= threshold).astype(int)
+        acc    = (binary == labels).mean()
+        tp = ((binary == 1) & (labels == 1)).sum()
+        fp = ((binary == 1) & (labels == 0)).sum()
+        fn = ((binary == 0) & (labels == 1)).sum()
+        tn = ((binary == 0) & (labels == 0)).sum()
+        prec = tp / (tp + fp) if tp + fp else 0
+        rec  = tp / (tp + fn) if tp + fn else 0
+        f1   = 2 * prec * rec / (prec + rec) if prec + rec else 0
         return {
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1': f1,
-            'confusion_matrix': cm,
-            'predictions': all_preds,
-            'labels': all_labels,
-            'threshold': threshold,
+            "accuracy": acc, "precision": prec, "recall": rec, "f1": f1,
+            "confusion_matrix": np.array([[tn, fp], [fn, tp]]),
+            "predictions": preds, "labels": labels, "threshold": threshold,
         }
 
     def find_best_threshold(self, val_loader):
-        """Find probability threshold that maximizes validation F1."""
-        all_preds, all_labels = self._collect_predictions(val_loader)
-
-        best_threshold = 0.5
-        best_f1 = -1.0
-
-        for threshold in np.linspace(0.1, 0.9, 81):
-            metrics = self._compute_classification_metrics(all_labels, all_preds, threshold=threshold)
-            if metrics['f1'] > best_f1:
-                best_f1 = metrics['f1']
-                best_threshold = float(threshold)
-
-        return best_threshold, best_f1
+        preds, labels = self._collect(val_loader)
+        best_thresh, best_f1 = 0.5, -1.0
+        for t in np.linspace(self.threshold_min, self.threshold_max, self.threshold_steps):
+            f1 = self._metrics(labels, preds, threshold=t)["f1"]
+            if f1 > best_f1:
+                best_f1, best_thresh = f1, float(t)
+        return best_thresh, best_f1
 
     def test(self, test_loader, threshold=0.5):
-        """Test on test set with configurable decision threshold."""
-        all_preds, all_labels = self._collect_predictions(test_loader)
+        preds, labels = self._collect(test_loader)
+        m = self._metrics(labels, preds, threshold)
+        m["auc"] = self._auc(labels, preds)
+        return m
 
-        metrics = self._compute_classification_metrics(all_labels, all_preds, threshold=threshold)
-        all_preds = np.array(all_preds)
-        all_labels = np.array(all_labels)
-
-        auc = self._compute_auc(all_labels, all_preds)
-        metrics['auc'] = auc
-
-        return metrics
-    
     @staticmethod
-    def _compute_auc(y_true, y_pred):
-        """Compute AUC-ROC"""
-        n_pos = np.sum(y_true == 1)
-        n_neg = np.sum(y_true == 0)
-        
+    def _auc(y_true, y_pred):
+        n_pos, n_neg = (y_true == 1).sum(), (y_true == 0).sum()
         if n_pos == 0 or n_neg == 0:
             return 0.5
-        
-        tpr_list = []
-        fpr_list = []
-        
-        for threshold in np.linspace(1, 0, 101):
-            y_pred_thresh = (y_pred >= threshold).astype(int)
-            tp = np.sum((y_pred_thresh == 1) & (y_true == 1))
-            fp = np.sum((y_pred_thresh == 1) & (y_true == 0))
-            
-            tpr = tp / n_pos
-            fpr = fp / n_neg
-            
-            tpr_list.append(tpr)
-            fpr_list.append(fpr)
-        
-        return np.trapz(tpr_list, fpr_list)
+        tprs, fprs = [], []
+        for t in np.linspace(1, 0, 101):
+            b  = (y_pred >= t).astype(int)
+            tp = ((b == 1) & (y_true == 1)).sum()
+            fp = ((b == 1) & (y_true == 0)).sum()
+            tprs.append(tp / n_pos)
+            fprs.append(fp / n_neg)
+        return float(np.trapz(tprs, fprs))
 
 
-def plot_training_history(trainer, model_name='Model'):
-    """Plot training history"""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 4))
-    
-    axes[0].plot(trainer.train_losses, label='Train', linewidth=2, color='steelblue')
-    axes[0].plot(trainer.val_losses, label='Val', linewidth=2, color='orange')
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title(f'{model_name} - Loss')
-    axes[0].legend()
-    axes[0].grid(True, alpha=0.3)
-    
-    axes[1].plot(trainer.train_accs, label='Train', linewidth=2, color='steelblue')
-    axes[1].plot(trainer.val_accs, label='Val', linewidth=2, color='orange')
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy')
-    axes[1].set_title(f'{model_name} - Accuracy')
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig(f'{model_name}_training_history.png', dpi=150, bbox_inches='tight')
-    print(f"✓ Saved {model_name} training history")
-    plt.close()
+# ============================================================================
+# Reporting
+# ============================================================================
 
+def save_training_report(results, config, output_path):
+    payload = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "config": config,
+        "results": {
+            name: {
+                "accuracy":         float(m["accuracy"]),
+                "precision":        float(m["precision"]),
+                "recall":           float(m["recall"]),
+                "f1":               float(m["f1"]),
+                "auc":              float(m["auc"]),
+                "threshold":        float(m.get("threshold", 0.5)),
+                "val_best_f1":      float(m.get("val_best_f1", 0.0)),
+                "confusion_matrix": m["confusion_matrix"].tolist(),
+            }
+            for name, m in results.items()
+        },
+    }
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    print(f"✓ Saved training report: {output_path}")
+
+
+# ============================================================================
+# Global training
+# ============================================================================
 
 def train_all_models(
     lookback_days=DEFAULT_LOOKBACK_DAYS,
@@ -410,37 +354,48 @@ def train_all_models(
     hybrid_hidden_dim=DEFAULT_HYBRID_HIDDEN_DIM,
     model_names=None,
     report_path=DEFAULT_REPORT_PATH,
+    output_dir=DEFAULT_OUTPUT_DIR,
+    scheduler_factor=DEFAULT_LR_SCHEDULER_FACTOR,
+    scheduler_patience=DEFAULT_LR_SCHEDULER_PATIENCE,
+    grad_clip_norm=DEFAULT_GRAD_CLIP_NORM,
+    threshold_min=DEFAULT_THRESHOLD_MIN,
+    threshold_max=DEFAULT_THRESHOLD_MAX,
+    threshold_steps=DEFAULT_THRESHOLD_STEPS,
 ):
-    """Main training function"""
+    """Train selected models on the full (all-beach) dataset."""
+    os.makedirs(output_dir, exist_ok=True)
+
     print("=" * 100)
-    print("JELLYFISH FORECASTING - TRAINING")
+    print("JELLYFISH FORECASTING — GLOBAL TRAINING")
     print("=" * 100)
-    print()
-    
+
     config = {
-        'lookback_days': int(lookback_days),
-        'use_integrated_data': bool(use_integrated_data),
-        'weather_csv_path': str(weather_csv_path),
-        'include_live_xml': bool(include_live_xml),
-        'batch_size': int(batch_size),
-        'learning_rate': float(learning_rate),
-        'dropout_prob': float(dropout_prob),
-        'num_epochs': int(num_epochs),
-        'patience': int(patience),
-        'hybrid_hidden_dim': int(hybrid_hidden_dim),
-        'model_names': list(model_names) if model_names is not None else ['GRU', 'Hybrid'],
-        'threshold_selection_metric': 'f1_on_validation',
+        "lookback_days":              int(lookback_days),
+        "use_integrated_data":        bool(use_integrated_data),
+        "weather_csv_path":           str(weather_csv_path),
+        "include_live_xml":           bool(include_live_xml),
+        "batch_size":                 int(batch_size),
+        "learning_rate":              float(learning_rate),
+        "dropout_prob":               float(dropout_prob),
+        "num_epochs":                 int(num_epochs),
+        "patience":                   int(patience),
+        "hybrid_hidden_dim":          int(hybrid_hidden_dim),
+        "model_names":                list(model_names) if model_names else [m.strip() for m in DEFAULT_MODEL_NAMES.split(",") if m.strip()],
+        "scheduler_factor":           float(scheduler_factor),
+        "scheduler_patience":         int(scheduler_patience),
+        "grad_clip_norm":             float(grad_clip_norm),
+        "threshold_min":              float(threshold_min),
+        "threshold_max":              float(threshold_max),
+        "threshold_steps":            int(threshold_steps),
+        "threshold_selection_metric": "f1_on_validation",
     }
-
-    print("Training configuration:")
-    for key, value in config.items():
-        print(f"  - {key}: {value}")
+    for k, v in config.items():
+        print(f"  {k}: {v}")
     print()
 
-    # Load data
+    # ── Load data ────────────────────────────────────────────────────────────
     print("1. LOADING DATA")
     print("-" * 100)
-
     if use_integrated_data:
         integrated = load_integrated_data(
             weather_csv_path=weather_csv_path,
@@ -449,195 +404,370 @@ def train_all_models(
             include_live_xml=include_live_xml,
         )
         if integrated is None:
-            raise RuntimeError("Failed to load integrated data. Check weather_csv_path and input files.")
-        X, y, metadata, feature_cols, daily_citizen, daily_weather, merged = integrated
+            raise RuntimeError("Failed to load integrated data.")
+        X, y, metadata, feature_cols, *_ = integrated
     else:
         X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
 
     n_features = int(X.shape[2])
-    config['n_features_per_day'] = n_features
+    config["n_features_per_day"] = n_features
     print()
-    
-    # Normalize
-    print("2. DATA NORMALIZATION")
+
+    # ── Normalise ────────────────────────────────────────────────────────────
+    print("2. DATA NORMALISATION")
     print("-" * 100)
-    
-    X_tensor = torch.FloatTensor(X)
-    mean = X_tensor.mean(dim=0)
-    std = X_tensor.std(dim=0)
-    X_normalized = (X_tensor - mean) / (std + 1e-8)
-    y_tensor = torch.FloatTensor(y)
-    
-    print(f"✓ Normalized using torch.mean() and torch.std()")
+    X_t  = torch.FloatTensor(X)
+    mean = X_t.mean(dim=0)
+    std  = X_t.std(dim=0)
+    X_n  = (X_t - mean) / (std + 1e-8)
+    y_t  = torch.FloatTensor(y)
+    print("✓ Normalised")
     print()
-    
-    # Create dataloaders
-    print("3. CREATE DATALOADERS")
+
+    # ── Split ────────────────────────────────────────────────────────────────
+    print("3. DATALOADERS")
     print("-" * 100)
-    
-    dataset = TensorDataset(X_normalized, y_tensor)
-    
-    train_size = int(0.7 * len(dataset))
-    val_size = int(0.15 * len(dataset))
-    test_size = len(dataset) - train_size - val_size
-    
-    train_dataset, val_dataset, test_dataset = random_split(
-        dataset,
-        [train_size, val_size, test_size],
-        generator=torch.Generator().manual_seed(42)
-    )
-    
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
-    print(f"✓ Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
+    n    = len(X_n)
+    n_tr = int(0.70 * n)
+    n_val= int(0.15 * n)
+    n_te = n - n_tr - n_val
+    g    = torch.Generator().manual_seed(42)
+    ds   = TensorDataset(X_n, y_t)
+    tr_ds, val_ds, te_ds = random_split(ds, [n_tr, n_val, n_te], generator=g)
+    tr_ld  = DataLoader(tr_ds,  batch_size=batch_size, shuffle=True)
+    val_ld = DataLoader(val_ds, batch_size=batch_size)
+    te_ld  = DataLoader(te_ds,  batch_size=batch_size)
+    print(f"✓ Train: {n_tr}  Val: {n_val}  Test: {n_te}")
     print()
-    
-    # Train models
+
+    # ── Model catalogue ──────────────────────────────────────────────────────
     print("4. TRAINING MODELS")
     print("-" * 100)
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}\n")
-    
-    results = {}
-    
-    # # Baseline
-    # print("BASELINE: Logistic Regression")
-    # print("-" * 90)
-    
-    # X_engineered = create_engineered_features_forecasting(X, lookback=lookback_days)
-    # X_eng_tensor = torch.FloatTensor(X_engineered)
-    # mean_eng = X_eng_tensor.mean(dim=0)
-    # std_eng = X_eng_tensor.std(dim=0)
-    # X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
-    
-    # baseline_dataset = TensorDataset(X_eng_normalized, y_tensor)
-    # train_dataset_bl, val_dataset_bl, test_dataset_bl = random_split(
-    #     baseline_dataset, [train_size, val_size, test_size],
-    #     generator=torch.Generator().manual_seed(42)
-    # )
-    
-    # train_loader_bl = DataLoader(train_dataset_bl, batch_size=batch_size, shuffle=True)
-    # val_loader_bl = DataLoader(val_dataset_bl, batch_size=batch_size, shuffle=False)
-    # test_loader_bl = DataLoader(test_dataset_bl, batch_size=batch_size, shuffle=False)
-    
-    # baseline_model = BaselineLogisticRegression(input_dim=X_eng_normalized.shape[1])
-    # baseline_trainer = Trainer(baseline_model, device=device, learning_rate=learning_rate, model_id='baseline')
-    
-    # start_time = time.time()
-    # baseline_trainer.fit(train_loader_bl, val_loader_bl, epochs=num_epochs, patience=patience)
-    # baseline_time = time.time() - start_time
-    
-    # baseline_best_threshold, baseline_val_best_f1 = baseline_trainer.find_best_threshold(val_loader_bl)
-    # baseline_metrics = baseline_trainer.test(test_loader_bl, threshold=baseline_best_threshold)
-    # baseline_metrics['val_best_f1'] = baseline_val_best_f1
-    
-    # print(
-    #     f"\nResults: Acc={baseline_metrics['accuracy']:.4f}, "
-    #     f"F1={baseline_metrics['f1']:.4f}, "
-    #     f"AUC={baseline_metrics['auc']:.4f}, "
-    #     f"Threshold={baseline_metrics['threshold']:.2f}"
-    # )
-    # print(f"Saving model...")
-    # torch.save(baseline_model.state_dict(), 'baseline_model.pth')
-    
-    # plot_training_history(baseline_trainer, 'Baseline')
-    # results['Baseline'] = baseline_metrics
-    # print()
-    
-    # Neural networks
-    requested_models = list(model_names) if model_names is not None else ['GRU', 'Hybrid']
-    allowed_models = {
-        'GRU': GRUNet(input_dim=n_features, dropout_prob=dropout_prob),
-        'Hybrid': HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob),
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}\n")
+
+    requested = list(model_names) if model_names else [m.strip() for m in DEFAULT_MODEL_NAMES.split(",") if m.strip()]
+    available = {
+        "GRU": GRUNet(input_dim=n_features, dropout_prob=dropout_prob),
+        "JellyfishNet": JellyfishNet(
+            input_dim=n_features,
+            hidden_dim=hybrid_hidden_dim,
+            dropout_prob=dropout_prob,
+            max_len=lookback_days,
+        ),
+        # Legacy models available on request
+        "Hybrid":  HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob),
+        "LSTM":    LSTMNet(input_dim=n_features, dropout_prob=dropout_prob),
+        "Conv1D":  Conv1DNet(input_dim=n_features, dropout_prob=dropout_prob),
     }
     models = {}
-    for name in requested_models:
-        if name not in allowed_models:
-            raise ValueError(f"Unsupported model '{name}'. Supported models: {sorted(allowed_models.keys())}")
-        models[name] = allowed_models[name]
-    
-    for model_name, model in models.items():
-        print(f"\n{model_name}")
-        print("-" * 90)
-        
-        trainer = Trainer(model, device=device, learning_rate=learning_rate, model_id=model_name.lower())
-        start_time = time.time()
-        trainer.fit(train_loader, val_loader, epochs=num_epochs, patience=patience)
-        train_time = time.time() - start_time
-        
-        best_threshold, val_best_f1 = trainer.find_best_threshold(val_loader)
-        test_metrics = trainer.test(test_loader, threshold=best_threshold)
-        test_metrics['val_best_f1'] = val_best_f1
-        
-        print(
-            f"\nResults: Acc={test_metrics['accuracy']:.4f}, "
-            f"F1={test_metrics['f1']:.4f}, "
-            f"AUC={test_metrics['auc']:.4f}, "
-            f"Threshold={test_metrics['threshold']:.2f}"
+    for name in requested:
+        if name not in available:
+            raise ValueError(f"Unknown model '{name}'. Choose from: {sorted(available)}")
+        models[name] = available[name]
+
+    results = {}
+    for name, model in models.items():
+        print(f"\n── {name} {'─'*(90 - len(name))}")
+        t0      = time.time()
+        trainer = Trainer(
+            model,
+            device=device,
+            learning_rate=learning_rate,
+            model_id=name.lower(),
+            scheduler_factor=scheduler_factor,
+            scheduler_patience=scheduler_patience,
+            grad_clip_norm=grad_clip_norm,
+            threshold_min=threshold_min,
+            threshold_max=threshold_max,
+            threshold_steps=threshold_steps,
         )
-        print(f"Saving model...")
-        torch.save(model.state_dict(), f'{model_name.lower()}_model.pth')
-        
-        plot_training_history(trainer, model_name)
-        results[model_name] = test_metrics
-    
-    # Summary
+        trainer.fit(tr_ld, val_ld, epochs=num_epochs, patience=patience)
+        thresh, val_f1 = trainer.find_best_threshold(val_ld)
+        metrics        = trainer.test(te_ld, threshold=thresh)
+        metrics["val_best_f1"] = val_f1
+        elapsed = time.time() - t0
+
+        save_path = os.path.join(output_dir, f"{name.lower()}_model.pth")
+        torch.save(model.state_dict(), save_path)
+        results[name] = metrics
+
+        print(
+            f"\n  Acc={metrics['accuracy']:.4f}  F1={metrics['f1']:.4f}  "
+            f"AUC={metrics['auc']:.4f}  Thresh={thresh:.2f}  ({elapsed:.0f}s)"
+        )
+        print(f"  Saved → {save_path}")
+
+    # ── Summary ──────────────────────────────────────────────────────────────
     print("\n" + "=" * 100)
     print("TRAINING SUMMARY")
     print("=" * 100)
-    print()
-    
-    print(f"{'Model':<20} {'Accuracy':<12} {'F1':<12} {'AUC':<12} {'Thresh':<8}")
-    print("-" * 66)
-    
-    for model_name in sorted(results.keys()):
-        metrics = results[model_name]
+    print(f"{'Model':<20} {'Accuracy':>10} {'F1':>10} {'AUC':>10} {'Threshold':>10}")
+    print("─" * 60)
+    for name, m in sorted(results.items()):
         print(
-            f"{model_name:<20} {metrics['accuracy']:<12.4f} {metrics['f1']:<12.4f} "
-            f"{metrics['auc']:<12.4f} {metrics['threshold']:<8.2f}"
+            f"{name:<20} {m['accuracy']:>10.4f} {m['f1']:>10.4f} "
+            f"{m['auc']:>10.4f} {m['threshold']:>10.2f}"
         )
-    
-    print("\n✓ Training complete! Model weights saved:")
-    for model_name in sorted(results.keys()):
-        print(f"  - {model_name.lower()}_model.pth")
     print("=" * 100)
 
     save_training_report(results, config, report_path)
+    return results
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train jellyfish forecasting models with tunable hyperparameters')
-    parser.add_argument('--lookback-days', type=int, default=DEFAULT_LOOKBACK_DAYS, help=f'Historical input window length in days (default: {DEFAULT_LOOKBACK_DAYS})')
-    parser.add_argument('--use-integrated-data', action='store_true', help='Train using integrated citizen + IMS weather + live RSS features')
-    parser.add_argument('--weather-csv-path', type=str, default=DEFAULT_WEATHER_CSV_PATH, help='Path to IMS weather CSV for integrated mode')
-    parser.add_argument('--disable-live-xml', action='store_true', help='Disable live RSS XML enrichment when using integrated mode')
-    parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help=f'Batch size (default: {BATCH_SIZE})')
-    parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help=f'Learning rate (default: {LEARNING_RATE})')
-    parser.add_argument('--dropout-prob', type=float, default=DROPOUT_PROB, help=f'Dropout probability (default: {DROPOUT_PROB})')
-    parser.add_argument('--num-epochs', type=int, default=NUM_EPOCHS, help=f'Number of epochs (default: {NUM_EPOCHS})')
-    parser.add_argument('--patience', type=int, default=15, help='Early stopping patience (default: 15)')
-    parser.add_argument('--hybrid-hidden-dim', type=int, default=96, help='Hybrid model hidden dimension (default: 96)')
-    parser.add_argument('--models', type=str, default='GRU,Hybrid', help='Comma-separated models to train (default: GRU,Hybrid)')
-    parser.add_argument('--report-path', type=str, default='training_report_latest.json', help='Output JSON path for training report')
+# ============================================================================
+# Per-beach fine-tuning
+# ============================================================================
 
-    args = parser.parse_args()
+def finetune_per_beach(
+    global_checkpoint,
+    lookback_days=DEFAULT_LOOKBACK_DAYS,
+    use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
+    weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
+    include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
+    finetune_epochs=DEFAULT_FINETUNE_EPOCHS,
+    finetune_lr=DEFAULT_FINETUNE_LR,
+    dropout_prob=DROPOUT_PROB,
+    hybrid_hidden_dim=DEFAULT_HYBRID_HIDDEN_DIM,
+    min_samples=DEFAULT_MIN_SAMPLES_PER_BEACH,
+    output_dir=DEFAULT_OUTPUT_DIR,
+    report_path="training_report_per_beach.json",
+    scheduler_factor=DEFAULT_LR_SCHEDULER_FACTOR,
+    scheduler_patience=DEFAULT_LR_SCHEDULER_PATIENCE,
+    grad_clip_norm=DEFAULT_GRAD_CLIP_NORM,
+    threshold_min=DEFAULT_THRESHOLD_MIN,
+    threshold_max=DEFAULT_THRESHOLD_MAX,
+    threshold_steps=DEFAULT_THRESHOLD_STEPS,
+):
+    """
+    Fine-tune a separate JellyfishNet for every beach.
 
-    model_names = [m.strip() for m in args.models.split(',') if m.strip()]
+    Beaches with fewer than `min_samples` sequences are skipped — the global
+    model is used for them at prediction time (predictor falls back automatically).
 
-    train_all_models(
-        lookback_days=args.lookback_days,
-        use_integrated_data=args.use_integrated_data,
-        weather_csv_path=args.weather_csv_path,
-        include_live_xml=not args.disable_live_xml,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        dropout_prob=args.dropout_prob,
-        num_epochs=args.num_epochs,
-        patience=args.patience,
-        hybrid_hidden_dim=args.hybrid_hidden_dim,
-        model_names=model_names,
-        report_path=args.report_path,
-    )
+    Parameters
+    ──────────
+    global_checkpoint : path to a pre-trained JellyfishNet .pth file
+    min_samples       : minimum sequences a beach must have to be fine-tuned
+    finetune_epochs   : max epochs per beach (default 20)
+    finetune_lr       : learning rate for fine-tuning (default 1e-4, lower than
+                        global training to avoid forgetting shared representations)
+    output_dir        : where per-beach .pth files are written
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    print("=" * 100)
+    print("JELLYFISH FORECASTING — PER-BEACH FINE-TUNING")
+    print(f"Global checkpoint : {global_checkpoint}")
+    print("=" * 100)
+
+    # ── Load data ────────────────────────────────────────────────────────────
+    if use_integrated_data:
+        integrated = load_integrated_data(
+            weather_csv_path=weather_csv_path,
+            lookback_days=lookback_days,
+            forecast_days=1,
+            include_live_xml=include_live_xml,
+        )
+        if integrated is None:
+            raise RuntimeError("Failed to load integrated data.")
+        X, y, metadata, *_ = integrated
+    else:
+        X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
+
+    n_features = int(X.shape[2])
+
+    # Normalise using global statistics (must match global training)
+    X_t  = torch.FloatTensor(X)
+    mean = X_t.mean(dim=0)
+    std  = X_t.std(dim=0)
+    X_n  = (X_t - mean) / (std + 1e-8)
+    y_t  = torch.FloatTensor(y)
+
+    device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    beach_ids = sorted(metadata["beach_id"].unique())
+    results   = {}
+    skipped   = []
+
+    for beach_id in beach_ids:
+        mask    = (metadata["beach_id"] == beach_id).values
+        X_beach = X_n[mask]
+        y_beach = y_t[mask]
+        n       = len(X_beach)
+
+        beach_name = metadata.loc[metadata["beach_id"] == beach_id, "beach_name"].iloc[0]
+
+        if n < min_samples:
+            print(f"\n  Beach {beach_id:2d} ({beach_name}) — skipped ({n} samples < {min_samples})")
+            skipped.append(beach_id)
+            continue
+
+        print(f"\n── Beach {beach_id:2d} ({beach_name})  n={n} {'─'*60}")
+
+        # Fresh copy of global weights for this beach
+        model = JellyfishNet(
+            input_dim=n_features,
+            hidden_dim=hybrid_hidden_dim,
+            dropout_prob=dropout_prob,
+        )
+        model.load_state_dict(torch.load(global_checkpoint, map_location=device))
+
+        # 70 / 15 / 15 split for this beach
+        n_tr  = max(1, int(0.70 * n))
+        n_val = max(1, int(0.15 * n))
+        n_te  = max(1, n - n_tr - n_val)
+        while n_tr + n_val + n_te > n:
+            n_te -= 1
+        while n_tr + n_val + n_te < n:
+            n_tr += 1
+
+        g  = torch.Generator().manual_seed(beach_id)
+        ds = TensorDataset(X_beach, y_beach)
+        tr_ds, val_ds, te_ds = random_split(ds, [n_tr, n_val, n_te], generator=g)
+
+        bs     = min(16, max(4, n_tr // 4))
+        tr_ld  = DataLoader(tr_ds,  batch_size=bs, shuffle=True)
+        val_ld = DataLoader(val_ds, batch_size=bs)
+        te_ld  = DataLoader(te_ds,  batch_size=bs)
+
+        trainer = Trainer(
+            model, device=device,
+            learning_rate=finetune_lr,
+            model_id=f"beach_{beach_id}",
+            scheduler_factor=scheduler_factor,
+            scheduler_patience=scheduler_patience,
+            grad_clip_norm=grad_clip_norm,
+            threshold_min=threshold_min,
+            threshold_max=threshold_max,
+            threshold_steps=threshold_steps,
+        )
+        trainer.fit(tr_ld, val_ld, epochs=finetune_epochs, patience=DEFAULT_PER_BEACH_PATIENCE)
+
+        thresh, val_f1 = trainer.find_best_threshold(val_ld)
+        metrics        = trainer.test(te_ld, threshold=thresh)
+        metrics["val_best_f1"] = val_f1
+        metrics["n_samples"]   = n
+
+        save_path = os.path.join(output_dir, f"beach_{beach_id}_model.pth")
+        torch.save(model.state_dict(), save_path)
+        results[str(beach_id)] = metrics
+
+        print(
+            f"  Acc={metrics['accuracy']:.4f}  F1={metrics['f1']:.4f}  "
+            f"AUC={metrics['auc']:.4f}  Thresh={thresh:.2f}  → {save_path}"
+        )
+
+    print("\n" + "=" * 100)
+    print(f"Fine-tuned : {len(results)} beaches")
+    print(f"Skipped    : {len(skipped)} beaches (global model used for these)")
+    if skipped:
+        print(f"  Skipped IDs: {skipped}")
+    print("=" * 100)
+
+    config = {
+        "mode":              "per_beach_finetune",
+        "global_checkpoint": global_checkpoint,
+        "lookback_days":     lookback_days,
+        "finetune_epochs":   finetune_epochs,
+        "finetune_lr":       finetune_lr,
+        "min_samples":       min_samples,
+        "skipped_beach_ids": skipped,
+    }
+    save_training_report(results, config, report_path)
+    return results
+
+
+# ============================================================================
+# CLI
+# ============================================================================
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train jellyfish forecasting models")
+
+    # Data
+    parser.add_argument("--lookback-days",       type=int,   default=DEFAULT_LOOKBACK_DAYS)
+    parser.add_argument("--use-integrated-data", action="store_true")
+    parser.add_argument("--weather-csv-path",    type=str,   default=DEFAULT_WEATHER_CSV_PATH)
+    parser.add_argument("--disable-live-xml",    action="store_true")
+
+    # Global training
+    parser.add_argument("--batch-size",          type=int,   default=BATCH_SIZE)
+    parser.add_argument("--learning-rate",       type=float, default=LEARNING_RATE)
+    parser.add_argument("--dropout-prob",        type=float, default=DROPOUT_PROB)
+    parser.add_argument("--num-epochs",          type=int,   default=NUM_EPOCHS)
+    parser.add_argument("--patience",            type=int,   default=DEFAULT_PATIENCE)
+    parser.add_argument("--hybrid-hidden-dim",   type=int,   default=DEFAULT_HYBRID_HIDDEN_DIM)
+    parser.add_argument("--models",              type=str,   default=DEFAULT_MODEL_NAMES,
+                        help=f"Comma-separated model names (default: {DEFAULT_MODEL_NAMES})")
+    parser.add_argument("--output-dir",          type=str,   default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--report-path",         type=str,   default=DEFAULT_REPORT_PATH)
+    parser.add_argument("--scheduler-factor",    type=float, default=DEFAULT_LR_SCHEDULER_FACTOR)
+    parser.add_argument("--scheduler-patience",  type=int,   default=DEFAULT_LR_SCHEDULER_PATIENCE)
+    parser.add_argument("--grad-clip-norm",      type=float, default=DEFAULT_GRAD_CLIP_NORM)
+    parser.add_argument("--threshold-min",       type=float, default=DEFAULT_THRESHOLD_MIN)
+    parser.add_argument("--threshold-max",       type=float, default=DEFAULT_THRESHOLD_MAX)
+    parser.add_argument("--threshold-steps",     type=int,   default=DEFAULT_THRESHOLD_STEPS)
+
+    # Per-beach fine-tuning
+    parser.add_argument("--finetune-per-beach",  action="store_true")
+    parser.add_argument("--global-checkpoint",   type=str,   default=None,
+                        help="Path to global JellyfishNet .pth for fine-tuning "
+                             "(defaults to output-dir/jellyfishnet_model.pth)")
+    parser.add_argument("--finetune-epochs",     type=int,   default=DEFAULT_FINETUNE_EPOCHS)
+    parser.add_argument("--finetune-lr",         type=float, default=DEFAULT_FINETUNE_LR)
+    parser.add_argument("--min-samples",         type=int,   default=DEFAULT_MIN_SAMPLES_PER_BEACH)
+
+    args        = parser.parse_args()
+    model_names = [m.strip() for m in args.models.split(",") if m.strip()]
+
+    if args.finetune_per_beach:
+        checkpoint = args.global_checkpoint or os.path.join(
+            args.output_dir, "jellyfishnet_model.pth"
+        )
+        if not os.path.exists(checkpoint):
+            print(f"\n✗ Global checkpoint not found: {checkpoint}")
+            print("  Run global training first, or pass --global-checkpoint <path>")
+            sys.exit(1)
+
+        finetune_per_beach(
+            global_checkpoint=checkpoint,
+            lookback_days=args.lookback_days,
+            use_integrated_data=args.use_integrated_data,
+            weather_csv_path=args.weather_csv_path,
+            include_live_xml=not args.disable_live_xml,
+            finetune_epochs=args.finetune_epochs,
+            finetune_lr=args.finetune_lr,
+            dropout_prob=args.dropout_prob,
+            hybrid_hidden_dim=args.hybrid_hidden_dim,
+            min_samples=args.min_samples,
+            output_dir=args.output_dir,
+            report_path="training_report_per_beach.json",
+            scheduler_factor=args.scheduler_factor,
+            scheduler_patience=args.scheduler_patience,
+            grad_clip_norm=args.grad_clip_norm,
+            threshold_min=args.threshold_min,
+            threshold_max=args.threshold_max,
+            threshold_steps=args.threshold_steps,
+        )
+    else:
+        train_all_models(
+            lookback_days=args.lookback_days,
+            use_integrated_data=args.use_integrated_data,
+            weather_csv_path=args.weather_csv_path,
+            include_live_xml=not args.disable_live_xml,
+            batch_size=args.batch_size,
+            learning_rate=args.learning_rate,
+            dropout_prob=args.dropout_prob,
+            num_epochs=args.num_epochs,
+            patience=args.patience,
+            hybrid_hidden_dim=args.hybrid_hidden_dim,
+            model_names=model_names,
+            output_dir=args.output_dir,
+            report_path=args.report_path,
+            scheduler_factor=args.scheduler_factor,
+            scheduler_patience=args.scheduler_patience,
+            grad_clip_norm=args.grad_clip_norm,
+            threshold_min=args.threshold_min,
+            threshold_max=args.threshold_max,
+            threshold_steps=args.threshold_steps,
+        )
