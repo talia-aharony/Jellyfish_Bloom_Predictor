@@ -107,6 +107,9 @@ class IMSWeatherFetcher:
             radiation_xml = self._fetch_xml(self.RADIATION_RSS_URL)
             if radiation_xml:
                 result["radiation_rss"] = self._parse_radiation_rss(radiation_xml)
+                print(f"[IMSWeatherFetcher] Radiation RSS loaded")
+            else:
+                print(f"[IMSWeatherFetcher] Radiation RSS fetch failed")
 
             for alert_region, url in self.FLOOD_ALERT_RSS_FEEDS.items():
                 xml_text = self._fetch_xml(url)

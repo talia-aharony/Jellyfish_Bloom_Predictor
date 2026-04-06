@@ -19,9 +19,6 @@ Usage examples
     # Global training (GRU + JellyfishNet)
     python -m jellyfish.train
 
-    # Global training with integrated weather CSV
-    python -m jellyfish.train --use-integrated-data
-
     # Per-beach fine-tuning from a global checkpoint
     python -m jellyfish.train --finetune-per-beach \\
         --global-checkpoint models/jellyfishnet_model.pth
@@ -47,12 +44,10 @@ if __package__ in (None, ""):
     ROOT = os.path.dirname(os.path.dirname(__file__))
     if ROOT not in sys.path:
         sys.path.insert(0, ROOT)
-    from jellyfish.data_loader import load_jellyfish_data
-    from jellyfish.data_loader_forecasting import load_integrated_data
+    from jellyfish.data_loader import load_integrated_data
     from jellyfish.settings import (
         DEFAULT_LOOKBACK_DAYS,
         DEFAULT_WEATHER_CSV_PATH,
-        DEFAULT_USE_INTEGRATED_DATA,
         DEFAULT_INCLUDE_LIVE_XML,
         DEFAULT_BATCH_SIZE,
         DEFAULT_LEARNING_RATE,
@@ -79,20 +74,15 @@ if __package__ in (None, ""):
     )
     from jellyfish.models import (
         BaselineLogisticRegression,
-        FeedforwardNet,
-        LSTMNet,
         GRUNet,
-        Conv1DNet,
-        HybridNet,
         JellyfishNet,
     )
+    from jellyfish.terminal_format import banner, rule, section
 else:
-    from .data_loader import load_jellyfish_data
-    from .data_loader_forecasting import load_integrated_data
+    from .data_loader import load_integrated_data
     from .settings import (
         DEFAULT_LOOKBACK_DAYS,
         DEFAULT_WEATHER_CSV_PATH,
-        DEFAULT_USE_INTEGRATED_DATA,
         DEFAULT_INCLUDE_LIVE_XML,
         DEFAULT_BATCH_SIZE,
         DEFAULT_LEARNING_RATE,
@@ -119,13 +109,10 @@ else:
     )
     from .models import (
         BaselineLogisticRegression,
-        FeedforwardNet,
-        LSTMNet,
         GRUNet,
-        Conv1DNet,
-        HybridNet,
         JellyfishNet,
     )
+    from .terminal_format import banner, rule, section
 
 BATCH_SIZE    = DEFAULT_BATCH_SIZE
 LEARNING_RATE = DEFAULT_LEARNING_RATE
@@ -403,7 +390,6 @@ def save_training_report(results, config, output_path):
 
 def train_all_models(
     lookback_days=DEFAULT_LOOKBACK_DAYS,
-    use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
     weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
     include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
     batch_size=BATCH_SIZE,
@@ -428,13 +414,11 @@ def train_all_models(
     """Train selected models on the full (all-beach) dataset."""
     os.makedirs(output_dir, exist_ok=True)
 
-    print("=" * 100)
-    print("JELLYFISH FORECASTING — GLOBAL TRAINING")
-    print("=" * 100)
+    section("JELLYFISH FORECASTING — GLOBAL TRAINING")
 
     config = {
         "lookback_days":              int(lookback_days),
-        "use_integrated_data":        bool(use_integrated_data),
+        "use_integrated_data":        True,
         "weather_csv_path":           str(weather_csv_path),
         "include_live_xml":           bool(include_live_xml),
         "batch_size":                 int(batch_size),
@@ -460,28 +444,23 @@ def train_all_models(
     print()
 
     # ── Load data ────────────────────────────────────────────────────────────
-    print("1. LOADING DATA")
-    print("-" * 100)
-    if use_integrated_data:
-        integrated = load_integrated_data(
-            weather_csv_path=weather_csv_path,
-            lookback_days=lookback_days,
-            forecast_days=1,
-            include_live_xml=include_live_xml,
-        )
-        if integrated is None:
-            raise RuntimeError("Failed to load integrated data.")
-        X, y, metadata, feature_cols, *_ = integrated
-    else:
-        X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
+    section("1. LOADING DATA", fill="-")
+    integrated = load_integrated_data(
+        weather_csv_path=weather_csv_path,
+        lookback_days=lookback_days,
+        forecast_days=1,
+        include_live_xml=include_live_xml,
+    )
+    if integrated is None:
+        raise RuntimeError("Failed to load integrated data.")
+    X, y, metadata, feature_cols, *_ = integrated
 
     n_features = int(X.shape[2])
     config["n_features_per_day"] = n_features
     print()
 
     # ── Normalise ────────────────────────────────────────────────────────────
-    print("2. DATA NORMALISATION")
-    print("-" * 100)
+    section("2. DATA NORMALISATION", fill="-")
     X_t  = torch.FloatTensor(X)
     mean = X_t.mean(dim=0)
     std  = X_t.std(dim=0)
@@ -491,8 +470,7 @@ def train_all_models(
     print()
 
     # ── Split ────────────────────────────────────────────────────────────────
-    print("3. DATALOADERS")
-    print("-" * 100)
+    section("3. DATALOADERS", fill="-")
     n    = len(X_n)
     n_tr = int(0.70 * n)
     n_val= int(0.15 * n)
@@ -507,8 +485,7 @@ def train_all_models(
     print()
 
     # ── Model catalogue ──────────────────────────────────────────────────────
-    print("4. TRAINING MODELS")
-    print("-" * 100)
+    section("4. TRAINING MODELS", fill="-")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}\n")
 
@@ -522,10 +499,6 @@ def train_all_models(
             dropout_prob=dropout_prob,
             max_len=lookback_days,
         ),
-        # Legacy models available on request
-        "Hybrid":  HybridNet(input_dim=n_features, hidden_dim=hybrid_hidden_dim, dropout_prob=dropout_prob),
-        "LSTM":    LSTMNet(input_dim=n_features, dropout_prob=dropout_prob),
-        "Conv1D":  Conv1DNet(input_dim=n_features, dropout_prob=dropout_prob),
     }
     models = {}
     for name in requested:
@@ -535,7 +508,7 @@ def train_all_models(
 
     results = {}
     for name, model in models.items():
-        print(f"\n── {name} {'─'*(90 - len(name))}")
+        print(f"\n{banner(name)}")
         t0      = time.time()
         trainer = Trainer(
             model,
@@ -575,17 +548,15 @@ def train_all_models(
         print(f"  Saved → {save_path}")
 
     # ── Summary ──────────────────────────────────────────────────────────────
-    print("\n" + "=" * 100)
-    print("TRAINING SUMMARY")
-    print("=" * 100)
+    section("TRAINING SUMMARY")
     print(f"{'Model':<20} {'Recall':>10} {'Precision':>10} {'F1':>10} {'Accuracy':>10} {'AUC':>10} {'Threshold':>10}")
-    print("─" * 60)
+    print(rule(f"{'Model':<20} {'Recall':>10} {'Precision':>10} {'F1':>10} {'Accuracy':>10} {'AUC':>10} {'Threshold':>10}", fill="─"))
     for name, m in sorted(results.items()):
         print(
             f"{name:<20} {m['recall']:>10.4f} {m['precision']:>10.4f} {m['f1']:>10.4f} "
             f"{m['accuracy']:>10.4f} {m['auc']:>10.4f} {m['threshold']:>10.2f}"
         )
-    print("=" * 100)
+    print(rule("TRAINING SUMMARY"))
 
     save_training_report(results, config, report_path)
     return results
@@ -598,7 +569,6 @@ def train_all_models(
 def finetune_per_beach(
     global_checkpoint,
     lookback_days=DEFAULT_LOOKBACK_DAYS,
-    use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
     weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
     include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
     finetune_epochs=DEFAULT_FINETUNE_EPOCHS,
@@ -635,24 +605,20 @@ def finetune_per_beach(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    print("=" * 100)
-    print("JELLYFISH FORECASTING — PER-BEACH FINE-TUNING")
+    section("JELLYFISH FORECASTING — PER-BEACH FINE-TUNING")
     print(f"Global checkpoint : {global_checkpoint}")
-    print("=" * 100)
+    print(rule("JELLYFISH FORECASTING — PER-BEACH FINE-TUNING"))
 
     # ── Load data ────────────────────────────────────────────────────────────
-    if use_integrated_data:
-        integrated = load_integrated_data(
-            weather_csv_path=weather_csv_path,
-            lookback_days=lookback_days,
-            forecast_days=1,
-            include_live_xml=include_live_xml,
-        )
-        if integrated is None:
-            raise RuntimeError("Failed to load integrated data.")
-        X, y, metadata, *_ = integrated
-    else:
-        X, y, metadata = load_jellyfish_data(lookback_days=lookback_days, forecast_days=1)
+    integrated = load_integrated_data(
+        weather_csv_path=weather_csv_path,
+        lookback_days=lookback_days,
+        forecast_days=1,
+        include_live_xml=include_live_xml,
+    )
+    if integrated is None:
+        raise RuntimeError("Failed to load integrated data.")
+    X, y, metadata, *_ = integrated
 
     n_features = int(X.shape[2])
 
@@ -681,7 +647,7 @@ def finetune_per_beach(
             skipped.append(beach_id)
             continue
 
-        print(f"\n── Beach {beach_id:2d} ({beach_name})  n={n} {'─'*60}")
+        print(f"\n{banner(f'Beach {beach_id:2d} ({beach_name})  n={n}')}" )
 
         # Fresh copy of global weights for this beach
         model = JellyfishNet(
@@ -746,12 +712,12 @@ def finetune_per_beach(
             f"AUC={metrics['auc']:.4f}  Thresh={thresh:.2f}  → {save_path}"
         )
 
-    print("\n" + "=" * 100)
+    section("PER-BEACH FINE-TUNING SUMMARY")
     print(f"Fine-tuned : {len(results)} beaches")
     print(f"Skipped    : {len(skipped)} beaches (global model used for these)")
     if skipped:
         print(f"  Skipped IDs: {skipped}")
-    print("=" * 100)
+    print(rule("PER-BEACH FINE-TUNING SUMMARY"))
 
     config = {
         "mode":              "per_beach_finetune",
@@ -775,7 +741,6 @@ if __name__ == "__main__":
 
     # Data
     parser.add_argument("--lookback-days",       type=int,   default=DEFAULT_LOOKBACK_DAYS)
-    parser.add_argument("--use-integrated-data", action="store_true")
     parser.add_argument("--weather-csv-path",    type=str,   default=DEFAULT_WEATHER_CSV_PATH)
     parser.add_argument("--disable-live-xml",    action="store_true")
 
@@ -824,7 +789,6 @@ if __name__ == "__main__":
         finetune_per_beach(
             global_checkpoint=checkpoint,
             lookback_days=args.lookback_days,
-            use_integrated_data=args.use_integrated_data,
             weather_csv_path=args.weather_csv_path,
             include_live_xml=not args.disable_live_xml,
             finetune_epochs=args.finetune_epochs,
@@ -847,7 +811,6 @@ if __name__ == "__main__":
     else:
         train_all_models(
             lookback_days=args.lookback_days,
-            use_integrated_data=args.use_integrated_data,
             weather_csv_path=args.weather_csv_path,
             include_live_xml=not args.disable_live_xml,
             batch_size=args.batch_size,

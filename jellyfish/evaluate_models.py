@@ -24,22 +24,20 @@ else:
     from .predictor import JellyfishPredictor
     from .evaluator import ModelEvaluator
     from .settings import DEFAULT_LOOKBACK_DAYS
+from .terminal_format import rule, section
 import pandas as pd
 import numpy as np
 
 
 def main():
-    print("=" * 100)
-    print("MODEL EVALUATION - BASELINE vs YOUR MODEL")
-    print("=" * 100)
+    section("MODEL EVALUATION - BASELINE vs YOUR MODEL")
     print()
     
     # =========================================================================
     # STEP 1: Initialize
     # =========================================================================
     
-    print("STEP 1: Initialize Predictor and Evaluator")
-    print("-" * 100)
+    section("STEP 1: Initialize Predictor and Evaluator", fill="-")
     
     predictor = JellyfishPredictor(device='cpu')
     predictor.load_data_cache(lookback_days=DEFAULT_LOOKBACK_DAYS, forecast_days=1)
@@ -59,8 +57,7 @@ def main():
     # STEP 2: Create Test Set
     # =========================================================================
     
-    print("STEP 2: Create Test Set")
-    print("-" * 100)
+    section("STEP 2: Create Test Set", fill="-")
     
     metadata = predictor.data_cache['metadata']
     
@@ -83,8 +80,7 @@ def main():
     # STEP 3: Evaluate
     # =========================================================================
     
-    print("STEP 3: Evaluating Models")
-    print("-" * 100)
+    section("STEP 3: Evaluating Models", fill="-")
     
     evaluator = ModelEvaluator(predictor)
     results = evaluator.evaluate_on_dataset(test_set, verbose=True)
@@ -95,9 +91,7 @@ def main():
     # STEP 4: View Metrics as Table
     # =========================================================================
     
-    print("\n" + "=" * 100)
-    print("METRICS TABLE (For Easy Comparison)")
-    print("=" * 100)
+    section("METRICS TABLE (For Easy Comparison)")
     print()
     
     df = evaluator.get_metrics_dataframe()
@@ -109,9 +103,7 @@ def main():
     # STEP 5: Confusion Matrix
     # =========================================================================
     
-    print("\n" + "=" * 100)
-    print("CONFUSION MATRIX DETAILS")
-    print("=" * 100)
+    section("CONFUSION MATRIX DETAILS")
     print()
     
     cm = evaluator.get_confusion_matrix_summary()
@@ -134,9 +126,7 @@ def main():
     # STEP 6: Export Results
     # =========================================================================
     
-    print("=" * 100)
-    print("EXPORTING RESULTS")
-    print("=" * 100)
+    section("EXPORTING RESULTS")
     print()
     
     # Export metrics to CSV
@@ -151,9 +141,7 @@ def main():
     # STEP 7: Summary
     # =========================================================================
     
-    print("=" * 100)
-    print("SUMMARY FOR YOUR PAPER")
-    print("=" * 100)
+    section("SUMMARY FOR YOUR PAPER")
     print()
     
     comp = results['comparison']

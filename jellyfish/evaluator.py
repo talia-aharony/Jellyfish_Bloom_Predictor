@@ -17,6 +17,8 @@ from sklearn.metrics import (
 )
 from datetime import datetime
 
+from .terminal_format import rule, section
+
 
 class ModelEvaluator:
     """Evaluate and compare Baseline vs Your Model"""
@@ -176,19 +178,17 @@ class ModelEvaluator:
             print("No metrics computed yet. Run evaluate_on_dataset() first.")
             return
         
-        print("\n" + "=" * 100)
-        print("MODEL EVALUATION METRICS - BASELINE vs YOUR MODEL")
-        print("=" * 100)
+        section("MODEL EVALUATION METRICS - BASELINE vs YOUR MODEL")
         print()
         
         # =====================================================================
         # CLASSIFICATION METRICS
         # =====================================================================
         
-        print("CLASSIFICATION METRICS")
-        print("-" * 100)
-        print(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}")
-        print("-" * 100)
+        section("CLASSIFICATION METRICS", fill="-")
+        metrics_header = f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}"
+        print(metrics_header)
+        print(rule(metrics_header, fill="-"))
         
         metrics_to_show = [
             ('Accuracy', 'accuracy'),
@@ -217,10 +217,9 @@ class ModelEvaluator:
         # SENSITIVITY & SPECIFICITY
         # =====================================================================
         
-        print("SENSITIVITY & SPECIFICITY")
-        print("-" * 100)
-        print(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}")
-        print("-" * 100)
+        section("SENSITIVITY & SPECIFICITY", fill="-")
+        print(metrics_header)
+        print(rule(metrics_header, fill="-"))
         
         sens_baseline = self.baseline_metrics['sensitivity']
         sens_your = self.your_model_metrics['sensitivity']
@@ -236,8 +235,7 @@ class ModelEvaluator:
         # CONFUSION MATRIX
         # =====================================================================
         
-        print("CONFUSION MATRIX")
-        print("-" * 100)
+        section("CONFUSION MATRIX", fill="-")
         
         print("\nBaseline:")
         print(f"  True Negatives:  {self.baseline_metrics['tn']:6d}")
@@ -257,8 +255,7 @@ class ModelEvaluator:
         # DATA DISTRIBUTION
         # =====================================================================
         
-        print("DATA DISTRIBUTION")
-        print("-" * 100)
+        section("DATA DISTRIBUTION", fill="-")
         
         total = self.baseline_metrics['n_samples']
         n_pos = self.baseline_metrics['n_positive']
@@ -274,25 +271,25 @@ class ModelEvaluator:
         # HEAD-TO-HEAD COMPARISON
         # =====================================================================
         
-        print("HEAD-TO-HEAD COMPARISON")
-        print("-" * 100)
+        section("HEAD-TO-HEAD COMPARISON", fill="-")
         
         comp = self.comparison
-        
-        print(f"Total predictions:       {total}")
+        summary_label_width = 24
+
+        print(f"{'Total predictions:':<{summary_label_width}} {total}")
         print()
-        print(f"Models agree:            {comp['total_agreement']} ({comp['agreement_rate']*100:.1f}%)")
-        print(f"  Both correct:          {comp['both_correct_when_agree']}")
-        print(f"  Both wrong:            {comp['both_wrong_when_agree']}")
+        print(f"{'Models agree:':<{summary_label_width}} {comp['total_agreement']} ({comp['agreement_rate']*100:.1f}%)")
+        print(f"{'  Both correct:':<{summary_label_width}} {comp['both_correct_when_agree']}")
+        print(f"{'  Both wrong:':<{summary_label_width}} {comp['both_wrong_when_agree']}")
         print()
-        print(f"Models disagree:         {comp['total_disagreement']}")
-        print(f"  Baseline wins:         {comp['baseline_wins']}")
-        print(f"  Your Model wins:       {comp['your_model_wins']}")
-        print(f"  Net improvement:       {comp['net_improvement']:+d}")
+        print(f"{'Models disagree:':<{summary_label_width}} {comp['total_disagreement']}")
+        print(f"{'  Baseline wins:':<{summary_label_width}} {comp['baseline_wins']}")
+        print(f"{'  Your Model wins:':<{summary_label_width}} {comp['your_model_wins']}")
+        print(f"{'  Net improvement:':<{summary_label_width}} {comp['net_improvement']:+d}")
         print()
-        print(f"Baseline accuracy:       {comp['baseline_accuracy']:.4f} ({comp['baseline_accuracy']*100:.2f}%)")
-        print(f"Your Model accuracy:     {comp['your_model_accuracy']:.4f} ({comp['your_model_accuracy']*100:.2f}%)")
-        print(f"Improvement:             {comp['accuracy_improvement']:+.4f} ({comp['accuracy_improvement_pct']:+.2f}%)")
+        print(f"{'Baseline accuracy:':<{summary_label_width}} {comp['baseline_accuracy']:.4f} ({comp['baseline_accuracy']*100:.2f}%)")
+        print(f"{'Your Model accuracy:':<{summary_label_width}} {comp['your_model_accuracy']:.4f} ({comp['your_model_accuracy']*100:.2f}%)")
+        print(f"{'Improvement:':<{summary_label_width}} {comp['accuracy_improvement']:+.4f} ({comp['accuracy_improvement_pct']:+.2f}%)")
         
         print()
         
@@ -300,9 +297,7 @@ class ModelEvaluator:
         # SUMMARY
         # =====================================================================
         
-        print("=" * 100)
-        print("SUMMARY")
-        print("=" * 100)
+        section("SUMMARY")
         
         if comp['your_model_wins'] > comp['baseline_wins']:
             print(f"✓ Your Model is BETTER")
@@ -387,16 +382,16 @@ class ModelEvaluator:
         """Export full report to text file"""
         
         with open(filepath, 'w') as f:
-            f.write("=" * 100 + "\n")
+            f.write(rule("MODEL EVALUATION REPORT") + "\n")
             f.write("MODEL EVALUATION REPORT\n")
-            f.write("=" * 100 + "\n")
+            f.write(rule("MODEL EVALUATION REPORT") + "\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             
             # Metrics table
             f.write("CLASSIFICATION METRICS\n")
-            f.write("-" * 100 + "\n")
+            f.write(rule("CLASSIFICATION METRICS", fill="-") + "\n")
             f.write(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}\n")
-            f.write("-" * 100 + "\n")
+            f.write(rule(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}", fill="-") + "\n")
             
             metrics_to_show = [
                 ('Accuracy', 'accuracy'),
@@ -422,7 +417,7 @@ class ModelEvaluator:
             
             # Comparison
             f.write("HEAD-TO-HEAD COMPARISON\n")
-            f.write("-" * 100 + "\n")
+            f.write(rule("HEAD-TO-HEAD COMPARISON", fill="-") + "\n")
             
             comp = self.comparison
             f.write(f"Total predictions:       {self.baseline_metrics['n_samples']}\n")

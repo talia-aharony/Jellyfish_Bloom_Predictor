@@ -13,8 +13,7 @@ import torch
 import torch.nn as nn
 import os
 from datetime import timedelta, date
-from .data_loader import load_jellyfish_data
-from .data_loader_forecasting import (
+from .data_loader import (
     load_integrated_data,
     load_live_ims_xml_features,
     map_live_rss_features_to_beaches,
@@ -22,19 +21,15 @@ from .data_loader_forecasting import (
 from .settings import (
     DEFAULT_LOOKBACK_DAYS,
     DEFAULT_WEATHER_CSV_PATH,
-    DEFAULT_USE_INTEGRATED_DATA,
     DEFAULT_INCLUDE_LIVE_XML,
     DEFAULT_HYBRID_HIDDEN_DIM,
 )
 from .models import (
     BaselineLogisticRegression,
-    FeedforwardNet,
-    LSTMNet,
     GRUNet,
-    Conv1DNet,
-    HybridNet,
     JellyfishNet,
 )
+from .terminal_format import banner, rule, section
 
 
 def create_engineered_features_forecasting(X, lookback=7):
@@ -138,38 +133,65 @@ class JellyfishPredictor:
         self,
         lookback_days=DEFAULT_LOOKBACK_DAYS,
         forecast_days=1,
-        use_integrated_data=DEFAULT_USE_INTEGRATED_DATA,
         weather_csv_path=DEFAULT_WEATHER_CSV_PATH,
         include_live_xml=DEFAULT_INCLUDE_LIVE_XML,
+        max_cache_samples=None,
     ):
         """Load and cache all data for faster predictions
         
         Args:
             lookback_days: Historical window (default: 7)
             forecast_days: Forecast horizon (default: 1)
-            use_integrated_data: Whether to load integrated citizen+weather features
-            weather_csv_path: IMS weather CSV path (used when use_integrated_data=True)
+            weather_csv_path: IMS weather CSV path
             include_live_xml: Include live RSS XML enrichments in integrated mode
+            max_cache_samples: Optional cap on number of cached sequences for faster demo runs
         """
         print("Loading data cache...")
-        if use_integrated_data:
-            integrated = load_integrated_data(
-                weather_csv_path=weather_csv_path,
-                lookback_days=lookback_days,
-                forecast_days=forecast_days,
-                include_live_xml=include_live_xml,
-            )
-            if integrated is None:
-                raise RuntimeError("Failed to load integrated data cache")
-            X, y, metadata, feature_cols, daily_citizen, *_ = integrated
-        else:
-            X, y, metadata = load_jellyfish_data(lookback_days, forecast_days)
-            feature_cols = [
-                'decimalLatitude', 'decimalLongitude', 'month', 'day_of_month',
-                'sin_month', 'cos_month', 'distance_from_coast', 'species_id',
-                'diameter_cm', 'observation_count', 'sting'
-            ]
-            daily_citizen = None
+        integrated = load_integrated_data(
+            weather_csv_path=weather_csv_path,
+            lookback_days=lookback_days,
+            forecast_days=forecast_days,
+            include_live_xml=include_live_xml,
+        )
+        if integrated is None:
+            raise RuntimeError("Failed to load integrated data cache")
+        X, y, metadata, feature_cols, daily_citizen, *_ = integrated
+
+        original_sample_count = len(X)
+        if max_cache_samples is not None:
+            max_cache_samples = int(max_cache_samples)
+            if max_cache_samples <= 0:
+                raise ValueError("max_cache_samples must be a positive integer")
+            if original_sample_count > max_cache_samples:
+                metadata = metadata.reset_index(drop=True)
+                if 'beach_id' in metadata.columns:
+                    per_beach_indices = (
+                        metadata.groupby('beach_id', sort=False)
+                        .tail(1)
+                        .index.to_numpy(dtype=int)
+                    )
+                    if len(per_beach_indices) >= max_cache_samples:
+                        selected_indices = per_beach_indices[:max_cache_samples]
+                    else:
+                        remaining_needed = max_cache_samples - len(per_beach_indices)
+                        remaining_indices = np.setdiff1d(
+                            np.arange(len(metadata), dtype=int),
+                            per_beach_indices,
+                            assume_unique=False,
+                        )
+                        selected_indices = np.concatenate(
+                            [per_beach_indices, remaining_indices[:remaining_needed]]
+                        )
+                else:
+                    selected_indices = np.arange(max_cache_samples, dtype=int)
+
+                selected_indices = np.sort(selected_indices)
+                X = X[selected_indices]
+                y = y[selected_indices]
+                metadata = metadata.iloc[selected_indices].reset_index(drop=True)
+                print(
+                    f"✓ Applied cache sampling: {len(X)} / {original_sample_count} sequences"
+                )
         
         # Compute normalization statistics
         X_tensor = torch.FloatTensor(X)
@@ -193,12 +215,12 @@ class JellyfishPredictor:
             'metadata': metadata,
             'X_tensor': X_tensor,
             'feature_cols': feature_cols,
-            'use_integrated_data': bool(use_integrated_data),
+            'use_integrated_data': True,
         }
         self.beach_geo_lookup = self._build_beach_geo_lookup()
 
         self.live_rss_lookup = {}
-        if use_integrated_data and include_live_xml and daily_citizen is not None:
+        if include_live_xml and daily_citizen is not None:
             self.live_rss_lookup = self._build_live_rss_lookup(daily_citizen)
         
         print(f"✓ Data cache loaded: {X.shape}")
@@ -285,15 +307,28 @@ class JellyfishPredictor:
         except Exception as exc:
             print(f"⚠ Could not build live RSS lookup: {exc}")
             return {}
+
+    @staticmethod
+    def _normalize_model_name(model_name):
+        """Normalize common model-name aliases to canonical names."""
+        name = str(model_name).strip()
+        aliases = {
+            'baseline': 'Baseline',
+            'jellynet': 'JellyfishNet',
+            'jellyfishnet': 'JellyfishNet',
+            'gru': 'GRU',
+        }
+        return aliases.get(name.lower(), name)
     
     def load_model(self, model_name, model_path, input_dim=None):
         """Load a trained model
         
         Args:
-            model_name: Name of model ('Baseline', 'LSTM', 'GRU', 'Conv1D', 'Hybrid', 'Feedforward')
+            model_name: Name of model ('Baseline', 'GRU', 'JellyfishNet')
             model_path: Path to saved model weights
             input_dim: Input dimension (only for Baseline)
         """
+        model_name = self._normalize_model_name(model_name)
         checkpoint = torch.load(model_path, map_location=self.device)
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint and isinstance(checkpoint['model_state_dict'], dict):
             state_dict = checkpoint['model_state_dict']
@@ -318,54 +353,12 @@ class JellyfishPredictor:
                 input_dim = inferred_input_dim
 
             model = BaselineLogisticRegression(input_dim)
-        elif model_name == 'Feedforward':
-            inferred_input_dim = None
-            fc1_weight = state_dict.get('fc1.weight') if isinstance(state_dict, dict) else None
-            if isinstance(fc1_weight, torch.Tensor) and fc1_weight.ndim == 2:
-                inferred_input_dim = int(fc1_weight.shape[1])
-
-            if input_dim is None:
-                input_dim = inferred_input_dim if inferred_input_dim is not None else 7 * 11
-            elif inferred_input_dim is not None and input_dim != inferred_input_dim:
-                print(
-                    f"⚠ Feedforward input_dim={input_dim} does not match checkpoint "
-                    f"({inferred_input_dim}). Using checkpoint value."
-                )
-                input_dim = inferred_input_dim
-            model = FeedforwardNet(input_dim)
-        elif model_name == 'LSTM':
-            inferred_input_dim = None
-            input_weight = state_dict.get('lstm.weight_ih_l0') if isinstance(state_dict, dict) else None
-            if isinstance(input_weight, torch.Tensor) and input_weight.ndim == 2:
-                inferred_input_dim = int(input_weight.shape[1])
-            model = LSTMNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
         elif model_name == 'GRU':
             inferred_input_dim = None
             input_weight = state_dict.get('gru.weight_ih_l0') if isinstance(state_dict, dict) else None
             if isinstance(input_weight, torch.Tensor) and input_weight.ndim == 2:
                 inferred_input_dim = int(input_weight.shape[1])
             model = GRUNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
-        elif model_name == 'Conv1D':
-            inferred_input_dim = None
-            conv_weight = state_dict.get('conv1.weight') if isinstance(state_dict, dict) else None
-            if isinstance(conv_weight, torch.Tensor) and conv_weight.ndim == 3:
-                inferred_input_dim = int(conv_weight.shape[1])
-            model = Conv1DNet(input_dim=inferred_input_dim if inferred_input_dim is not None else 11)
-        elif model_name == 'Hybrid':
-            inferred_input_dim = None
-            inferred_hidden_dim = None
-            conv_weight = None
-            if isinstance(state_dict, dict):
-                conv_weight = state_dict.get('cnn_short.0.weight')
-                if conv_weight is None:
-                    conv_weight = state_dict.get('cnn_in.0.weight')
-            if isinstance(conv_weight, torch.Tensor) and conv_weight.ndim == 3:
-                inferred_hidden_dim = int(conv_weight.shape[0] * 2) if 'cnn_short.0.weight' in state_dict else int(conv_weight.shape[0])
-                inferred_input_dim = int(conv_weight.shape[1])
-            model = HybridNet(
-                input_dim=inferred_input_dim if inferred_input_dim is not None else 11,
-                hidden_dim=inferred_hidden_dim if inferred_hidden_dim is not None else DEFAULT_HYBRID_HIDDEN_DIM,
-            )
         elif model_name == 'JellyfishNet':
             inferred_input_dim = None
             inferred_hidden_dim = None
@@ -399,6 +392,7 @@ class JellyfishPredictor:
         """Load all per-beach checkpoints named beach_<id>_model.pth."""
         import re
 
+        model_name = self._normalize_model_name(model_name)
         if model_name != 'JellyfishNet':
             raise ValueError("Per-beach loading currently supports JellyfishNet only")
 
@@ -446,6 +440,7 @@ class JellyfishPredictor:
         """Return (model, model_used_label) with fallback:
         exact per-beach -> nearest-beach model -> global model.
         """
+        model_name = self._normalize_model_name(model_name)
         if model_name == 'JellyfishNet' and beach_id is not None:
             per_beach = self.per_beach_models.get(model_name, {})
             if int(beach_id) in per_beach:
@@ -470,6 +465,7 @@ class JellyfishPredictor:
         Returns:
             probability (float): Probability of jellyfish presence (0-1)
         """
+        model_name = self._normalize_model_name(model_name)
         model, model_used = self._get_model(model_name, beach_id=beach_id)
         
         # Prepare input
@@ -634,6 +630,8 @@ class JellyfishPredictor:
         """
         if self.data_cache is None:
             raise RuntimeError("Call load_data_cache() first")
+
+        model_name = self._normalize_model_name(model_name)
         
         # Parse date if string
         if isinstance(forecast_date, str):
@@ -768,6 +766,7 @@ class JellyfishPredictor:
         Returns:
             list: List of prediction dictionaries
         """
+        model_name = self._normalize_model_name(model_name)
         results = []
         for beach_id, forecast_date in predictions_list:
             result = self.predict_for_beach_date(beach_id, forecast_date, model_name)
@@ -787,7 +786,15 @@ class JellyfishPredictor:
         """
         results = {}
         for model_name in self.models.keys():
-            result = self.predict_for_beach_date(beach_id, forecast_date, model_name)
+            try:
+                result = self.predict_for_beach_date(beach_id, forecast_date, model_name)
+            except Exception as exc:
+                result = {
+                    'error': str(exc),
+                    'beach_id': beach_id,
+                    'forecast_date': forecast_date,
+                    'model_name': model_name,
+                }
             results[model_name] = result
         
         return results
@@ -812,12 +819,11 @@ class JellyfishPredictor:
         
         single_model_mode = len(valid_results) == 1
         first_result = list(valid_results.values())[0]
-        print(f"\n" + "=" * 80)
+        print()
         if single_model_mode:
-            print(f"JELLYFISH FORECAST RESULT")
+            section("JELLYFISH FORECAST RESULT")
         else:
-            print(f"JELLYFISH FORECAST COMPARISON")
-        print(f"=" * 80)
+            section("JELLYFISH FORECAST COMPARISON")
         print(f"Beach ID:        {beach_id}")
         print(f"Beach Name:      {first_result['beach_name']}")
         print(f"Forecast Date:   {forecast_date}")
@@ -826,11 +832,11 @@ class JellyfishPredictor:
         else:
             actual_outcome = 'Jellyfish Present' if first_result.get('actual') == 1 else 'No Jellyfish'
         print(f"Actual Outcome:  {actual_outcome}")
-        print(f"=" * 80)
         print()
         
-        print(f"{'Model':<20} {'Probability':<15} {'Percentage':<15} {'Prediction':<15} {'Confidence':<15}")
-        print("-" * 80)
+        table_header = f"{'Model':<20} {'Probability':<15} {'Percentage':<15} {'Prediction':<15} {'Confidence':<15}"
+        print(table_header)
+        print(rule(table_header, fill="-"))
         
         for model_name in sorted(valid_results.keys()):
             result = valid_results[model_name]
@@ -849,9 +855,9 @@ class JellyfishPredictor:
             ensemble_pred = 'Yes' if avg_prob > 0.5 else 'No'
             avg_percentage_display = f"{avg_percentage:.2f}%"
 
-            print("-" * 80)
+            print(rule(table_header, fill="-"))
             print(f"{'Ensemble':<20} {avg_prob:<15.4f} {avg_percentage_display:<15} {ensemble_pred:<15}")
-        print("=" * 80)
+        print(rule("JELLYFISH FORECAST COMPARISON" if not single_model_mode else "JELLYFISH FORECAST RESULT"))
         print()
 
 
@@ -869,9 +875,7 @@ if __name__ == '__main__':
     print(metadata[['beach_id', 'beach_name', 'forecast_date', 'jellyfish_observed']].head(10))
     
     # Example prediction (you would replace with actual trained model paths)
-    print("\n" + "=" * 80)
-    print("To use the predictor:")
-    print("=" * 80)
+    section("To use the predictor:")
     print("""
 1. Load trained models:
    predictor.load_model('LSTM', 'path/to/lstm_model.pth')

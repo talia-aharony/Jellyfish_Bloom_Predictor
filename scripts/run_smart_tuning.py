@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
+from jellyfish.terminal_format import rule
+
 
 def pick_metrics(report):
     """Pick metrics from report structure, preferring JellyfishNet when available."""
@@ -76,7 +78,6 @@ All runs: integrated data + live XML
             # Build command with correct CLI argument names (all use hyphens)
             cmd = [
                 'python3', 'jellyfish/train.py',
-                '--use-integrated-data',
                 '--lookback-days', str(config['lookback_days']),
                 '--hybrid-hidden-dim', str(config['hidden_dim']),
                 '--dropout-prob', str(config['dropout']),
@@ -138,9 +139,9 @@ All runs: integrated data + live XML
                 log.write(msg2 + '\n')
         
         # Summary section in log
-        log.write(f"\n{'='*60}\n")
+        log.write(f"\n{rule('Run Summary')}\n")
         log.write(f"Run Summary\n")
-        log.write(f"{'='*60}\n")
+        log.write(f"{rule('Run Summary')}\n")
         log.write(f"Total configs: {len(configs)}\n")
         log.write(f"Successful runs: {len(results)}\n")
     
@@ -166,15 +167,16 @@ All runs: integrated data + live XML
         json.dump(manifest, f, indent=2)
     
     # Final summary
+    footer_title = f"SMART TUNING COMPLETE - {timestamp}"
     footer = f"""
-{'='*60}
-SMART TUNING COMPLETE - {timestamp}
-{'='*60}
+{rule(footer_title)}
+{footer_title}
+{rule(footer_title)}
 Completed {len(results)}/{len(configs)} runs successfully
 Run directory: {run_dir}
 Transcript:   {transcript_path}
 Manifest:     {manifest_path}
-{'='*60}
+{rule(footer_title)}
 """
     print(footer)
     
