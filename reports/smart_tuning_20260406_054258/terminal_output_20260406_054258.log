@@ -1,0 +1,14 @@
+SMART HYPERPARAMETER TUNING - 20260406_054258
+========================================================
+Total Configurations: 150  
+Strategy: Stratified sampling (60% HC, 30% exploration, 10% edges)
+Objective: Maximize precision/F1 while keeping recall >= 0.95
+Base epochs: 12
+Scheduler patience: 8
+Threshold target recall: 0.95
+All runs use: integrated data + live XML
+========================================================
+
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+IndexError: list index out of range

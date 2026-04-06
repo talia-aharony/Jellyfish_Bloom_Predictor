@@ -1,0 +1,14 @@
+====================================================================================
+SMART HYPERPARAMETER TUNING - 20260406_054653
+====================================================================================
+Strategy: Stratified sampling (60% high-confidence, 30% exploration, 10% edge cases)
+Total configurations: 150
+Objective: Maximize precision/F1 while keeping recall >= 0.95
+Output dir: reports/smart_tuning_20260406_054653
+Transcript: reports/smart_tuning_20260406_054653/terminal_output_20260406_054653.log
+Base config: 12 epochs, patience=8, threshold_target_recall=0.95
+All runs: integrated data + live XML
+====================================================================================
+
+
+[  1/150] st001: lb=23 hd=192 do=0.12 lr=0.000694 bs=21 pw=1.77

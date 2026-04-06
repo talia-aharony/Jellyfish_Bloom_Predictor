@@ -1,0 +1,308 @@
+{
+  "title": "LIVE XML HYPERPARAMETER TUNING - 20260406_050922",
+  "timestamp": "20260406_050922",
+  "objective": "maximize precision/f1 while keeping recall >= 0.95",
+  "runs": [
+    {
+      "run": "lx1",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx1.json",
+      "hyperparameters": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 24,
+        "learning_rate": 0.0007,
+        "dropout_prob": 0.2,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.4,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9405339805825242,
+        "precision": 0.3497292418772563,
+        "f1": 0.5098684210526315,
+        "accuracy": 0.41222879684418146,
+        "auc": 0.6775309533401803,
+        "threshold": 0.1775
+      },
+      "curve_points": {
+        "train_losses": 12,
+        "val_losses": 12,
+        "lr_history": 12
+      }
+    },
+    {
+      "run": "lx2",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx2.json",
+      "hyperparameters": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 16,
+        "learning_rate": 0.0006,
+        "dropout_prob": 0.15,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 192,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.6,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9271844660194175,
+        "precision": 0.3550185873605948,
+        "f1": 0.5134408602150538,
+        "accuracy": 0.4287968441814596,
+        "auc": 0.6726478582331346,
+        "threshold": 0.166875
+      },
+      "curve_points": {
+        "train_losses": 12,
+        "val_losses": 12,
+        "lr_history": 12
+      }
+    },
+    {
+      "run": "lx3",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx3.json",
+      "hyperparameters": {
+        "lookback_days": 21,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 16,
+        "learning_rate": 0.0005,
+        "dropout_prob": 0.15,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.4,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9532710280373832,
+        "precision": 0.3710777626193724,
+        "f1": 0.5342062193126021,
+        "accuracy": 0.433969769291965,
+        "auc": 0.7142113288163872,
+        "threshold": 0.20937499999999998
+      },
+      "curve_points": {
+        "train_losses": 12,
+        "val_losses": 12,
+        "lr_history": 12
+      }
+    },
+    {
+      "run": "lx4",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx4.json",
+      "hyperparameters": {
+        "lookback_days": 21,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 16,
+        "learning_rate": 0.0005,
+        "dropout_prob": 0.1,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 192,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.6,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9661214953271028,
+        "precision": 0.35738980121002595,
+        "f1": 0.5217665615141956,
+        "accuracy": 0.39697692919649963,
+        "auc": 0.6998100402466658,
+        "threshold": 0.20937499999999998
+      },
+      "curve_points": {
+        "train_losses": 10,
+        "val_losses": 10,
+        "lr_history": 10
+      }
+    },
+    {
+      "run": "lx5",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx5.json",
+      "hyperparameters": {
+        "lookback_days": 28,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 16,
+        "learning_rate": 0.0004,
+        "dropout_prob": 0.2,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.4,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9753694581280788,
+        "precision": 0.339186295503212,
+        "f1": 0.5033365109628217,
+        "accuracy": 0.3730445246690734,
+        "auc": 0.7004509982622354,
+        "threshold": 0.135
+      },
+      "curve_points": {
+        "train_losses": 12,
+        "val_losses": 12,
+        "lr_history": 12
+      }
+    },
+    {
+      "run": "lx6",
+      "report_path": "reports/livexml_tuning_20260406_050922/lx6.json",
+      "hyperparameters": {
+        "lookback_days": 21,
+        "use_integrated_data": true,
+        "weather_csv_path": "None",
+        "include_live_xml": true,
+        "batch_size": 12,
+        "learning_rate": 0.0004,
+        "dropout_prob": 0.15,
+        "num_epochs": 12,
+        "patience": 8,
+        "hybrid_hidden_dim": 256,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 81,
+        "threshold_min_precision": 0.2,
+        "threshold_target_recall": 0.95,
+        "positive_class_weight": 1.8,
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9521028037383178,
+        "precision": 0.3625444839857651,
+        "f1": 0.5251288659793815,
+        "accuracy": 0.41368337311058073,
+        "auc": 0.6976106360551504,
+        "threshold": 0.15625
+      },
+      "curve_points": {
+        "train_losses": 12,
+        "val_losses": 12,
+        "lr_history": 12
+      }
+    }
+  ],
+  "best_under_recall_constraint": {
+    "run": "lx3",
+    "report_path": "reports/livexml_tuning_20260406_050922/lx3.json",
+    "hyperparameters": {
+      "lookback_days": 21,
+      "use_integrated_data": true,
+      "weather_csv_path": "None",
+      "include_live_xml": true,
+      "batch_size": 16,
+      "learning_rate": 0.0005,
+      "dropout_prob": 0.15,
+      "num_epochs": 12,
+      "patience": 8,
+      "hybrid_hidden_dim": 128,
+      "model_names": [
+        "JellyfishNet"
+      ],
+      "scheduler_factor": 0.3,
+      "scheduler_patience": 1,
+      "grad_clip_norm": 1.0,
+      "threshold_min": 0.05,
+      "threshold_max": 0.9,
+      "threshold_steps": 81,
+      "threshold_min_precision": 0.2,
+      "threshold_target_recall": 0.95,
+      "positive_class_weight": 1.4,
+      "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
+      "n_features_per_day": 33
+    },
+    "metrics": {
+      "recall": 0.9532710280373832,
+      "precision": 0.3710777626193724,
+      "f1": 0.5342062193126021,
+      "accuracy": 0.433969769291965,
+      "auc": 0.7142113288163872,
+      "threshold": 0.20937499999999998
+    },
+    "curve_points": {
+      "train_losses": 12,
+      "val_losses": 12,
+      "lr_history": 12
+    }
+  }
+}

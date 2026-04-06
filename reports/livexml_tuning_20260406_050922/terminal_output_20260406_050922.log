@@ -9,3 +9,1013 @@ HYPERPARAMETERS: lookback=14; hidden=128; dropout=0.2; lr=0.0007; bs=24; epochs=
 REPORT_PATH: reports/livexml_tuning_20260406_050922/lx1.json
 OUTPUT_DIR: models/livexml_20260406_050922/lx1
 ======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 14
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 24
+  learning_rate: 0.0007
+  dropout_prob: 0.2
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 128
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.4
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'northern_coast', 'central_coast', 'southern_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch southern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_213_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16893
+Input shape:                    (16893, 14, 33) (samples, days, features)
+Output shape:                   (16893,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5537 (32.8%)
+Negative samples:               11356 (67.2%)
+
+Unique beaches:                 20
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11825  Val: 2533  Test: 2535
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.7250  val_loss=0.7134  train_acc=0.6551  val_acc=0.6680  lr=0.000700
+  Epoch   2/12  train_loss=0.7097  val_loss=0.7101  train_acc=0.6752  val_acc=0.6652  lr=0.000700
+  Epoch   3/12  train_loss=0.7049  val_loss=0.7111  train_acc=0.6775  val_acc=0.6850  lr=0.000700
+  Epoch   4/12  train_loss=0.7003  val_loss=0.7017  train_acc=0.6751  val_acc=0.6822  lr=0.000700
+  Epoch   5/12  train_loss=0.6953  val_loss=0.7059  train_acc=0.6847  val_acc=0.6550  lr=0.000700
+  Epoch   6/12  train_loss=0.6915  val_loss=0.6998  train_acc=0.6831  val_acc=0.6731  lr=0.000700
+  Epoch   7/12  train_loss=0.6822  val_loss=0.7034  train_acc=0.6902  val_acc=0.6932  lr=0.000700
+  Epoch   8/12  train_loss=0.6811  val_loss=0.7034  train_acc=0.6928  val_acc=0.6897  lr=0.000140
+  Epoch   9/12  train_loss=0.6543  val_loss=0.7103  train_acc=0.7110  val_acc=0.6838  lr=0.000140
+  Epoch  10/12  train_loss=0.6457  val_loss=0.7131  train_acc=0.7159  val_acc=0.6838  lr=0.000028
+  Epoch  11/12  train_loss=0.6348  val_loss=0.7177  train_acc=0.7214  val_acc=0.6838  lr=0.000028
+  Epoch  12/12  train_loss=0.6318  val_loss=0.7172  train_acc=0.7227  val_acc=0.6810  lr=0.000006
+
+  Recall=0.9405  Precision=0.3497  F1=0.5099  Acc=0.4122  AUC=0.6775  Thresh=0.18  (95s)
+  Saved → models/livexml_20260406_050922/lx1/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9405     0.3497     0.5099     0.4122     0.6775       0.18
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx1.json
+
+======================================================================
+RUN TITLE: lx2_lb14_hd192_do015_lr6e4_bs16_pw1.6
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=14; hidden=192; dropout=0.15; lr=0.0006; bs=16; epochs=12; patience=8; sched_factor=0.2; sched_patience=1; pos_weight=1.6; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx2.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx2
+======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 14
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 16
+  learning_rate: 0.0006
+  dropout_prob: 0.15
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 192
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.6
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'southern_coast', 'central_coast', 'northern_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_210_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_210_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16893
+Input shape:                    (16893, 14, 33) (samples, days, features)
+Output shape:                   (16893,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5537 (32.8%)
+Negative samples:               11356 (67.2%)
+
+Unique beaches:                 20
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11825  Val: 2533  Test: 2535
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.7776  val_loss=0.7625  train_acc=0.6428  val_acc=0.6372  lr=0.000600
+  Epoch   2/12  train_loss=0.7629  val_loss=0.7545  train_acc=0.6534  val_acc=0.6573  lr=0.000600
+  Epoch   3/12  train_loss=0.7552  val_loss=0.7539  train_acc=0.6627  val_acc=0.6538  lr=0.000600
+  Epoch   4/12  train_loss=0.7465  val_loss=0.7581  train_acc=0.6670  val_acc=0.6834  lr=0.000600
+  Epoch   5/12  train_loss=0.7418  val_loss=0.7615  train_acc=0.6761  val_acc=0.6103  lr=0.000120
+  Epoch   6/12  train_loss=0.7187  val_loss=0.7522  train_acc=0.6826  val_acc=0.6739  lr=0.000120
+  Epoch   7/12  train_loss=0.7065  val_loss=0.7580  train_acc=0.6987  val_acc=0.6755  lr=0.000120
+  Epoch   8/12  train_loss=0.6966  val_loss=0.7704  train_acc=0.7055  val_acc=0.6632  lr=0.000024
+  Epoch   9/12  train_loss=0.6821  val_loss=0.7716  train_acc=0.7147  val_acc=0.6640  lr=0.000024
+  Epoch  10/12  train_loss=0.6790  val_loss=0.7786  train_acc=0.7164  val_acc=0.6688  lr=0.000005
+  Epoch  11/12  train_loss=0.6758  val_loss=0.7786  train_acc=0.7226  val_acc=0.6684  lr=0.000005
+  Epoch  12/12  train_loss=0.6768  val_loss=0.7786  train_acc=0.7222  val_acc=0.6668  lr=0.000001
+
+  Recall=0.9272  Precision=0.3550  F1=0.5134  Acc=0.4288  AUC=0.6726  Thresh=0.17  (164s)
+  Saved → models/livexml_20260406_050922/lx2/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9272     0.3550     0.5134     0.4288     0.6726       0.17
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx2.json
+
+======================================================================
+RUN TITLE: lx3_lb21_hd128_do015_lr5e4_bs16_pw1.4
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=21; hidden=128; dropout=0.15; lr=0.0005; bs=16; epochs=12; patience=8; sched_factor=0.3; sched_patience=1; pos_weight=1.4; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx3.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx3
+======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 21
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 16
+  learning_rate: 0.0005
+  dropout_prob: 0.15
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 128
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.3
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.4
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'central_coast', 'southern_coast', 'northern_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch southern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_213_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_center_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_center_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16753
+Input shape:                    (16753, 21, 33) (samples, days, features)
+Output shape:                   (16753,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5484 (32.7%)
+Negative samples:               11269 (67.3%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11727  Val: 2512  Test: 2514
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.7257  val_loss=0.7099  train_acc=0.6647  val_acc=0.6871  lr=0.000500
+  Epoch   2/12  train_loss=0.7106  val_loss=0.7090  train_acc=0.6721  val_acc=0.6696  lr=0.000500
+  Epoch   3/12  train_loss=0.7033  val_loss=0.7050  train_acc=0.6789  val_acc=0.6680  lr=0.000500
+  Epoch   4/12  train_loss=0.6973  val_loss=0.7045  train_acc=0.6792  val_acc=0.6891  lr=0.000500
+  Epoch   5/12  train_loss=0.6898  val_loss=0.7021  train_acc=0.6857  val_acc=0.6967  lr=0.000500
+  Epoch   6/12  train_loss=0.6829  val_loss=0.6972  train_acc=0.6914  val_acc=0.6927  lr=0.000500
+  Epoch   7/12  train_loss=0.6753  val_loss=0.7084  train_acc=0.6969  val_acc=0.6883  lr=0.000500
+  Epoch   8/12  train_loss=0.6637  val_loss=0.7211  train_acc=0.7060  val_acc=0.6951  lr=0.000150
+  Epoch   9/12  train_loss=0.6314  val_loss=0.7357  train_acc=0.7255  val_acc=0.6903  lr=0.000150
+  Epoch  10/12  train_loss=0.6178  val_loss=0.7298  train_acc=0.7376  val_acc=0.6775  lr=0.000045
+  Epoch  11/12  train_loss=0.6003  val_loss=0.7410  train_acc=0.7454  val_acc=0.6815  lr=0.000045
+  Epoch  12/12  train_loss=0.5954  val_loss=0.7494  train_acc=0.7499  val_acc=0.6764  lr=0.000013
+
+  Recall=0.9533  Precision=0.3711  F1=0.5342  Acc=0.4340  AUC=0.7142  Thresh=0.21  (164s)
+  Saved → models/livexml_20260406_050922/lx3/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9533     0.3711     0.5342     0.4340     0.7142       0.21
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx3.json
+
+======================================================================
+RUN TITLE: lx4_lb21_hd192_do010_lr5e4_bs16_pw1.6
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=21; hidden=192; dropout=0.10; lr=0.0005; bs=16; epochs=12; patience=8; sched_factor=0.3; sched_patience=1; pos_weight=1.6; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx4.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx4
+======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 21
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 16
+  learning_rate: 0.0005
+  dropout_prob: 0.1
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 192
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.3
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.6
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'central_coast', 'northern_coast', 'southern_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch southern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_213_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16753
+Input shape:                    (16753, 21, 33) (samples, days, features)
+Output shape:                   (16753,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5484 (32.7%)
+Negative samples:               11269 (67.3%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11727  Val: 2512  Test: 2514
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.7787  val_loss=0.7663  train_acc=0.6459  val_acc=0.6294  lr=0.000500
+  Epoch   2/12  train_loss=0.7640  val_loss=0.7517  train_acc=0.6471  val_acc=0.6732  lr=0.000500
+  Epoch   3/12  train_loss=0.7546  val_loss=0.7550  train_acc=0.6594  val_acc=0.6489  lr=0.000500
+  Epoch   4/12  train_loss=0.7489  val_loss=0.7584  train_acc=0.6644  val_acc=0.6672  lr=0.000150
+  Epoch   5/12  train_loss=0.7283  val_loss=0.7528  train_acc=0.6797  val_acc=0.6493  lr=0.000150
+  Epoch   6/12  train_loss=0.7164  val_loss=0.7592  train_acc=0.6917  val_acc=0.6429  lr=0.000045
+  Epoch   7/12  train_loss=0.6997  val_loss=0.7690  train_acc=0.6968  val_acc=0.6752  lr=0.000045
+  Epoch   8/12  train_loss=0.6921  val_loss=0.7789  train_acc=0.7072  val_acc=0.6744  lr=0.000013
+  Epoch   9/12  train_loss=0.6857  val_loss=0.7791  train_acc=0.7137  val_acc=0.6664  lr=0.000013
+  Epoch  10/12  train_loss=0.6828  val_loss=0.7810  train_acc=0.7135  val_acc=0.6624  lr=0.000004
+  Early stopping at epoch 10
+
+  Recall=0.9661  Precision=0.3574  F1=0.5218  Acc=0.3970  AUC=0.6998  Thresh=0.21  (185s)
+  Saved → models/livexml_20260406_050922/lx4/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9661     0.3574     0.5218     0.3970     0.6998       0.21
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx4.json
+
+======================================================================
+RUN TITLE: lx5_lb28_hd128_do020_lr4e4_bs16_pw1.4
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=28; hidden=128; dropout=0.20; lr=0.0004; bs=16; epochs=12; patience=8; sched_factor=0.3; sched_patience=1; pos_weight=1.4; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx5.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx5
+======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 28
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 16
+  learning_rate: 0.0004
+  dropout_prob: 0.2
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 128
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.3
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.4
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'central_coast', 'southern_coast', 'northern_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch southern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_213_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_south_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16620
+Input shape:                    (16620, 28, 33) (samples, days, features)
+Output shape:                   (16620,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5417 (32.6%)
+Negative samples:               11203 (67.4%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11634  Val: 2493  Test: 2493
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.7263  val_loss=0.7108  train_acc=0.6638  val_acc=0.6687  lr=0.000400
+  Epoch   2/12  train_loss=0.7090  val_loss=0.7134  train_acc=0.6816  val_acc=0.6919  lr=0.000400
+  Epoch   3/12  train_loss=0.7020  val_loss=0.7028  train_acc=0.6826  val_acc=0.6887  lr=0.000400
+  Epoch   4/12  train_loss=0.6978  val_loss=0.7024  train_acc=0.6857  val_acc=0.6799  lr=0.000400
+  Epoch   5/12  train_loss=0.6916  val_loss=0.6984  train_acc=0.6885  val_acc=0.6855  lr=0.000400
+  Epoch   6/12  train_loss=0.6882  val_loss=0.6989  train_acc=0.6918  val_acc=0.6955  lr=0.000400
+  Epoch   7/12  train_loss=0.6807  val_loss=0.6998  train_acc=0.6951  val_acc=0.6843  lr=0.000120
+  Epoch   8/12  train_loss=0.6629  val_loss=0.7063  train_acc=0.7109  val_acc=0.6899  lr=0.000120
+  Epoch   9/12  train_loss=0.6567  val_loss=0.7027  train_acc=0.7107  val_acc=0.6871  lr=0.000036
+  Epoch  10/12  train_loss=0.6485  val_loss=0.7090  train_acc=0.7174  val_acc=0.6915  lr=0.000036
+  Epoch  11/12  train_loss=0.6434  val_loss=0.7181  train_acc=0.7207  val_acc=0.6923  lr=0.000011
+  Epoch  12/12  train_loss=0.6397  val_loss=0.7129  train_acc=0.7241  val_acc=0.6867  lr=0.000011
+
+  Recall=0.9754  Precision=0.3392  F1=0.5033  Acc=0.3730  AUC=0.7005  Thresh=0.14  (204s)
+  Saved → models/livexml_20260406_050922/lx5/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9754     0.3392     0.5033     0.3730     0.7005       0.14
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx5.json
+
+======================================================================
+RUN TITLE: lx6_lb21_hd256_do015_lr4e4_bs12_pw1.8
+TIMESTAMP: 20260406_050922
+HYPERPARAMETERS: lookback=21; hidden=256; dropout=0.15; lr=0.0004; bs=12; epochs=12; patience=8; sched_factor=0.2; sched_patience=1; pos_weight=1.8; include_live_xml=true
+REPORT_PATH: reports/livexml_tuning_20260406_050922/lx6.json
+OUTPUT_DIR: models/livexml_20260406_050922/lx6
+======================================================================
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 21
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 12
+  learning_rate: 0.0004
+  dropout_prob: 0.15
+  num_epochs: 12
+  patience: 8
+  hybrid_hidden_dim: 256
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.8
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected regions from beach locations: {'northern_coast', 'southern_coast', 'central_coast'}
+  Fetching central_coast...
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching northern_coast...
+[IMSWeatherFetcher] Failed to fetch northern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+  Fetching southern_coast...
+[IMSWeatherFetcher] Failed to fetch southern_coast: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_213_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/forecast_sea/rssForecastSea_212_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_north_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_north_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+[IMSWeatherFetcher] Failed to fetch XML https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_center_en.xml: HTTPSConnectionPool(host='ims.gov.il', port=443): Max retries exceeded with url: /sites/default/files/ims_data/rss/alert/rssAlert_flood_center_en.xml (Caused by NewConnectionError("HTTPSConnection(host='ims.gov.il', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+✓ Live RSS daily features loaded: 6 date rows from 3 region(s)
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 120
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16753
+Input shape:                    (16753, 21, 33) (samples, days, features)
+Output shape:                   (16753,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5484 (32.7%)
+Negative samples:               11269 (67.3%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11727  Val: 2512  Test: 2514
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/12  train_loss=0.8289  val_loss=0.8188  train_acc=0.6222  val_acc=0.6819  lr=0.000400
+  Epoch   2/12  train_loss=0.8115  val_loss=0.8189  train_acc=0.6412  val_acc=0.6334  lr=0.000400
+  Epoch   3/12  train_loss=0.8043  val_loss=0.8075  train_acc=0.6486  val_acc=0.6732  lr=0.000400
+  Epoch   4/12  train_loss=0.7961  val_loss=0.8123  train_acc=0.6546  val_acc=0.6576  lr=0.000400
+  Epoch   5/12  train_loss=0.7875  val_loss=0.8036  train_acc=0.6673  val_acc=0.6461  lr=0.000400
+  Epoch   6/12  train_loss=0.7763  val_loss=0.8240  train_acc=0.6800  val_acc=0.6481  lr=0.000400
+  Epoch   7/12  train_loss=0.7630  val_loss=0.8407  train_acc=0.6872  val_acc=0.6564  lr=0.000080
+  Epoch   8/12  train_loss=0.7135  val_loss=0.8590  train_acc=0.7222  val_acc=0.6624  lr=0.000080
+  Epoch   9/12  train_loss=0.6856  val_loss=0.8757  train_acc=0.7438  val_acc=0.6628  lr=0.000016
+  Epoch  10/12  train_loss=0.6594  val_loss=0.8854  train_acc=0.7507  val_acc=0.6596  lr=0.000016
+  Epoch  11/12  train_loss=0.6515  val_loss=0.9009  train_acc=0.7581  val_acc=0.6620  lr=0.000003
+  Epoch  12/12  train_loss=0.6496  val_loss=0.9010  train_acc=0.7667  val_acc=0.6592  lr=0.000003
+
+  Recall=0.9521  Precision=0.3625  F1=0.5251  Acc=0.4137  AUC=0.6976  Thresh=0.16  (359s)
+  Saved → models/livexml_20260406_050922/lx6/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9521     0.3625     0.5251     0.4137     0.6976       0.16
+====================================================================================================
+✓ Saved training report: reports/livexml_tuning_20260406_050922/lx6.json
+Wrote reports/livexml_tuning_20260406_050922/manifest_20260406_050922.json
+
+DONE. LOG: reports/livexml_tuning_20260406_050922/terminal_output_20260406_050922.log
+DONE. MANIFEST: reports/livexml_tuning_20260406_050922/manifest_20260406_050922.json

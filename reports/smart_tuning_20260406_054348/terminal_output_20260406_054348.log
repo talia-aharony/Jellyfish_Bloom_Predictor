@@ -1,0 +1,494 @@
+====================================================================================
+SMART HYPERPARAMETER TUNING - 20260406_054348
+====================================================================================
+Strategy: Stratified sampling (60% high-confidence, 30% exploration, 10% edge cases)
+Total configurations: 150
+Objective: Maximize precision/F1 while keeping recall >= 0.95
+Output dir: reports/smart_tuning_20260406_054348
+Transcript: reports/smart_tuning_20260406_054348/terminal_output_20260406_054348.log
+Base config: 12 epochs, patience=8, threshold_target_recall=0.95
+All runs: integrated data + live XML
+====================================================================================
+
+
+[  1/150] st001: lb=23 hd=192 do=0.12 lr=0.000694 bs=21 pw=1.77
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  2/150] st002: lb=21 hd=128 do=0.09 lr=0.001000 bs=17 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  3/150] st003: lb=20 hd=128 do=0.11 lr=0.001000 bs=23 pw=1.81
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  4/150] st004: lb=24 hd=160 do=0.07 lr=0.000420 bs=14 pw=1.47
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  5/150] st005: lb=28 hd=192 do=0.15 lr=0.000667 bs=20 pw=1.67
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  6/150] st006: lb=15 hd=160 do=0.17 lr=0.000611 bs=23 pw=1.37
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  7/150] st007: lb=25 hd=192 do=0.14 lr=0.000427 bs=19 pw=1.58
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  8/150] st008: lb=22 hd=160 do=0.05 lr=0.000364 bs=13 pw=1.51
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[  9/150] st009: lb=15 hd=224 do=0.09 lr=0.000833 bs=19 pw=1.53
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 10/150] st010: lb=18 hd=160 do=0.07 lr=0.001000 bs=20 pw=1.71
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 11/150] st011: lb=17 hd=128 do=0.16 lr=0.000747 bs=14 pw=1.68
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 12/150] st012: lb=19 hd=192 do=0.12 lr=0.000445 bs=12 pw=1.73
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 13/150] st013: lb=26 hd=128 do=0.09 lr=0.000876 bs=22 pw=1.77
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 14/150] st014: lb=18 hd=160 do=0.13 lr=0.000691 bs=18 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 15/150] st015: lb=20 hd=224 do=0.14 lr=0.000188 bs=15 pw=1.71
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 16/150] st016: lb=22 hd=192 do=0.09 lr=0.000290 bs=18 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 17/150] st017: lb=24 hd=160 do=0.14 lr=0.000707 bs=17 pw=1.73
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 18/150] st018: lb=20 hd=160 do=0.15 lr=0.000394 bs=18 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 19/150] st019: lb=24 hd=128 do=0.12 lr=0.000381 bs=15 pw=1.21
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 20/150] st020: lb=14 hd=128 do=0.14 lr=0.000234 bs=19 pw=1.68
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 21/150] st021: lb=20 hd=224 do=0.11 lr=0.000261 bs=12 pw=1.78
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 22/150] st022: lb=16 hd=128 do=0.13 lr=0.000478 bs=18 pw=1.57
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 23/150] st023: lb=25 hd=160 do=0.07 lr=0.000488 bs=17 pw=1.27
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 24/150] st024: lb=19 hd=224 do=0.14 lr=0.000864 bs=19 pw=1.32
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 25/150] st025: lb=26 hd=192 do=0.19 lr=0.000712 bs=20 pw=1.61
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 26/150] st026: lb=27 hd=192 do=0.13 lr=0.001000 bs=14 pw=1.67
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 27/150] st027: lb=17 hd=224 do=0.13 lr=0.000672 bs=19 pw=1.01
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 28/150] st028: lb=25 hd=160 do=0.16 lr=0.000877 bs=21 pw=1.25
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 29/150] st029: lb=26 hd=160 do=0.23 lr=0.000998 bs=18 pw=1.53
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 30/150] st030: lb=24 hd=224 do=0.09 lr=0.000766 bs=22 pw=1.74
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 31/150] st031: lb=22 hd=128 do=0.10 lr=0.000253 bs=13 pw=1.28
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 32/150] st032: lb=22 hd=224 do=0.13 lr=0.000255 bs=16 pw=1.66
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 33/150] st033: lb=24 hd=192 do=0.18 lr=0.000258 bs=23 pw=1.72
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 34/150] st034: lb=17 hd=160 do=0.10 lr=0.000622 bs=14 pw=1.51
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 35/150] st035: lb=21 hd=128 do=0.16 lr=0.001000 bs=12 pw=1.52
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 36/150] st036: lb=21 hd=224 do=0.07 lr=0.000515 bs=12 pw=1.47
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 37/150] st037: lb=21 hd=128 do=0.16 lr=0.000458 bs=16 pw=1.57
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 38/150] st038: lb=19 hd=192 do=0.07 lr=0.000463 bs=13 pw=1.15
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 39/150] st039: lb=25 hd=192 do=0.12 lr=0.000272 bs=17 pw=1.53
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 40/150] st040: lb=22 hd=160 do=0.08 lr=0.000920 bs=20 pw=1.41
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 41/150] st041: lb=23 hd=160 do=0.20 lr=0.000714 bs=20 pw=1.60
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 42/150] st042: lb=22 hd=128 do=0.16 lr=0.000221 bs=19 pw=1.60
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 43/150] st043: lb=20 hd=192 do=0.12 lr=0.000226 bs=13 pw=1.20
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 44/150] st044: lb=20 hd=128 do=0.13 lr=0.000555 bs=12 pw=1.53
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 45/150] st045: lb=16 hd=224 do=0.15 lr=0.000305 bs=16 pw=1.64
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 46/150] st046: lb=28 hd=192 do=0.20 lr=0.000464 bs=14 pw=1.40
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 47/150] st047: lb=19 hd=160 do=0.16 lr=0.000293 bs=21 pw=1.83
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 48/150] st048: lb=20 hd=160 do=0.10 lr=0.000568 bs=18 pw=1.62
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 49/150] st049: lb=28 hd=192 do=0.17 lr=0.000531 bs=14 pw=1.38
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 50/150] st050: lb=20 hd=224 do=0.10 lr=0.000679 bs=23 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 51/150] st051: lb=21 hd=192 do=0.09 lr=0.000359 bs=16 pw=1.08
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 52/150] st052: lb=21 hd=160 do=0.15 lr=0.000521 bs=12 pw=1.97
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 53/150] st053: lb=19 hd=224 do=0.15 lr=0.000634 bs=15 pw=1.69
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 54/150] st054: lb=24 hd=128 do=0.20 lr=0.001000 bs=16 pw=1.11
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 55/150] st055: lb=23 hd=160 do=0.13 lr=0.000315 bs=23 pw=1.33
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 56/150] st056: lb=20 hd=160 do=0.13 lr=0.000357 bs=19 pw=1.54
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 57/150] st057: lb=20 hd=224 do=0.16 lr=0.000243 bs=22 pw=1.77
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 58/150] st058: lb=21 hd=128 do=0.11 lr=0.000282 bs=20 pw=1.39
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 59/150] st059: lb=16 hd=192 do=0.08 lr=0.001000 bs=16 pw=1.55
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 60/150] st060: lb=26 hd=128 do=0.11 lr=0.000324 bs=12 pw=1.23
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 61/150] st061: lb=14 hd=128 do=0.13 lr=0.000424 bs=23 pw=1.67
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 62/150] st062: lb=22 hd=224 do=0.12 lr=0.000198 bs=16 pw=1.00
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 63/150] st063: lb=18 hd=192 do=0.08 lr=0.000395 bs=16 pw=1.55
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 64/150] st064: lb=27 hd=192 do=0.15 lr=0.000665 bs=23 pw=1.39
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 65/150] st065: lb=20 hd=160 do=0.14 lr=0.000168 bs=19 pw=1.52
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 66/150] st066: lb=22 hd=128 do=0.12 lr=0.000316 bs=14 pw=1.77
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 67/150] st067: lb=26 hd=160 do=0.09 lr=0.000406 bs=23 pw=1.50
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 68/150] st068: lb=22 hd=128 do=0.10 lr=0.000233 bs=20 pw=1.65
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 69/150] st069: lb=19 hd=128 do=0.13 lr=0.000584 bs=16 pw=1.50
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 70/150] st070: lb=23 hd=160 do=0.13 lr=0.000361 bs=12 pw=1.39
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 71/150] st071: lb=19 hd=192 do=0.19 lr=0.001000 bs=19 pw=1.34
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 72/150] st072: lb=21 hd=160 do=0.08 lr=0.000296 bs=16 pw=1.32
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 73/150] st073: lb=21 hd=192 do=0.06 lr=0.000133 bs=15 pw=1.57
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 74/150] st074: lb=19 hd=160 do=0.15 lr=0.001000 bs=20 pw=1.15
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 75/150] st075: lb=18 hd=224 do=0.14 lr=0.001000 bs=12 pw=1.41
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 76/150] st076: lb=16 hd=160 do=0.18 lr=0.000598 bs=12 pw=1.75
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 77/150] st077: lb=23 hd=128 do=0.21 lr=0.000502 bs=16 pw=1.51
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 78/150] st078: lb=21 hd=160 do=0.07 lr=0.000278 bs=15 pw=1.31
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 79/150] st079: lb=23 hd=160 do=0.15 lr=0.000282 bs=21 pw=1.44
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 80/150] st080: lb=26 hd=192 do=0.13 lr=0.000955 bs=23 pw=1.39
+   ✗ Failed (code=2)
+   Error: usage: train.py [-h] [--lookback-days LOOKBACK_DAYS] [--use-integrated-data]
+                [--weather-csv-path WEATHER_CSV_PATH] [--disable-live-xml]
+                [--batch-size BATCH_SIZE] [--lea
+
+[ 81/150] st081: lb=20 hd=192 do=0.23 lr=0.000781 bs=13 pw=1.77
