@@ -1,0 +1,2 @@
+n_samples,baseline_acc,jelly_acc,jelly_wins,baseline_wins,both_wrong
+16696,0.6772280785816962,0.7049592716818399,1986,1523,3403

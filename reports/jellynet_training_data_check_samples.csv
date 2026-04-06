@@ -1,0 +1,15 @@
+case_type,beach_id,beach_name,forecast_date,actual,probability,prediction,correct,confidence_distance
+True positive,13,Herzlia-Gaash,2017-06-26,1,0.6769352,Yes,True,0.1769352
+True positive,13,Herzlia-Gaash,2017-07-01,1,0.6711039,Yes,True,0.1711039
+True positive,15,Jaffa-Tel Aviv,2017-07-02,1,0.6693449,Yes,True,0.1693449
+True positive,13,Herzlia-Gaash,2017-06-25,1,0.66681504,Yes,True,0.16681504
+False negative,3,Kiryat Yam-Acco,2018-08-27,1,0.12048237,No,False,0.3795176
+False negative,11,Natanya-Michmoret,2022-10-08,1,0.120737225,No,False,0.37926278
+False negative,11,Natanya-Michmoret,2021-08-07,1,0.12095254,No,False,0.37904745
+True negative,10,Michmoret-Hadera,2022-09-07,0,0.11825004,No,True,0.38174996
+True negative,3,Kiryat Yam-Acco,2018-07-12,0,0.119480945,No,True,0.38051906
+True negative,10,Michmoret-Hadera,2016-08-13,0,0.12007552,No,True,0.37992448
+True negative,5,Tira-Shiqmona,2021-07-29,0,0.12015402,No,True,0.37984598
+False positive,10,Michmoret-Hadera,2017-06-30,0,0.6736597,Yes,False,0.17365968
+False positive,1,Nahariya-Rosh Hniqra,2022-07-07,0,0.6723333,Yes,False,0.1723333
+False positive,1,Nahariya-Rosh Hniqra,2022-06-30,0,0.67107856,Yes,False,0.17107856
