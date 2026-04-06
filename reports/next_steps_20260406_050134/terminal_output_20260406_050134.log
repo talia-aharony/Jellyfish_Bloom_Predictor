@@ -1,0 +1,317 @@
+==============================================================
+NEXT-STEPS DIAGNOSTIC LOOP - 20260406_050134
+==============================================================
+
+--------------------------------------------------------------
+RUN TITLE: Step1_LongHorizon_SchedulerFirst_20260406_050134
+RUN TIMESTAMP: 20260406_050134
+HYPERPARAMETERS: model=JellyfishNet; integrated=true; lookback=14; epochs=20; patience=10; lr=0.001; bs=32; dropout=0.3; hidden=64; scheduler_factor=0.2; scheduler_patience=1; threshold_min=0.05; threshold_max=0.9; threshold_steps=81; threshold_min_precision=0.2; threshold_target_recall=0.95; positive_class_weight=1.0; include_live_xml=false
+REPORT_PATH: reports/next_steps_20260406_050134/step1_longhorizon_scheduler.json
+OUTPUT_DIR: models/next_steps_20260406_050134/step1
+--------------------------------------------------------------
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 14
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: False
+  batch_size: 32
+  learning_rate: 0.001
+  dropout_prob: 0.3
+  num_epochs: 20
+  patience: 10
+  hybrid_hidden_dim: 64
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.0
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16893
+Input shape:                    (16893, 14, 33) (samples, days, features)
+Output shape:                   (16893,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5537 (32.8%)
+Negative samples:               11356 (67.2%)
+
+Unique beaches:                 20
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11825  Val: 2533  Test: 2535
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/20  train_loss=0.6076  val_loss=0.5878  train_acc=0.6790  val_acc=0.6751  lr=0.001000
+  Epoch   2/20  train_loss=0.5916  val_loss=0.5872  train_acc=0.6848  val_acc=0.6775  lr=0.001000
+  Epoch   3/20  train_loss=0.5870  val_loss=0.5829  train_acc=0.6896  val_acc=0.6763  lr=0.001000
+  Epoch   4/20  train_loss=0.5850  val_loss=0.5799  train_acc=0.6907  val_acc=0.6940  lr=0.001000
+  Epoch   5/20  train_loss=0.5828  val_loss=0.5778  train_acc=0.6944  val_acc=0.6881  lr=0.001000
+  Epoch   6/20  train_loss=0.5805  val_loss=0.5781  train_acc=0.6964  val_acc=0.6846  lr=0.001000
+  Epoch   7/20  train_loss=0.5778  val_loss=0.5795  train_acc=0.6953  val_acc=0.6818  lr=0.000200
+  Epoch   8/20  train_loss=0.5698  val_loss=0.5758  train_acc=0.7026  val_acc=0.6952  lr=0.000200
+  Epoch   9/20  train_loss=0.5662  val_loss=0.5751  train_acc=0.7057  val_acc=0.6976  lr=0.000200
+  Epoch  10/20  train_loss=0.5657  val_loss=0.5756  train_acc=0.7055  val_acc=0.6932  lr=0.000200
+  Epoch  11/20  train_loss=0.5662  val_loss=0.5744  train_acc=0.7068  val_acc=0.6988  lr=0.000200
+  Epoch  12/20  train_loss=0.5645  val_loss=0.5769  train_acc=0.7065  val_acc=0.6948  lr=0.000200
+  Epoch  13/20  train_loss=0.5607  val_loss=0.5761  train_acc=0.7110  val_acc=0.6972  lr=0.000040
+  Epoch  14/20  train_loss=0.5611  val_loss=0.5754  train_acc=0.7085  val_acc=0.6984  lr=0.000040
+  Epoch  15/20  train_loss=0.5606  val_loss=0.5756  train_acc=0.7066  val_acc=0.6972  lr=0.000008
+  Epoch  16/20  train_loss=0.5600  val_loss=0.5755  train_acc=0.7101  val_acc=0.6968  lr=0.000008
+  Epoch  17/20  train_loss=0.5576  val_loss=0.5755  train_acc=0.7107  val_acc=0.6964  lr=0.000002
+  Epoch  18/20  train_loss=0.5592  val_loss=0.5755  train_acc=0.7088  val_acc=0.6972  lr=0.000002
+  Epoch  19/20  train_loss=0.5581  val_loss=0.5755  train_acc=0.7121  val_acc=0.6976  lr=0.000000
+  Epoch  20/20  train_loss=0.5573  val_loss=0.5755  train_acc=0.7131  val_acc=0.6972  lr=0.000000
+
+  Recall=0.9187  Precision=0.3544  F1=0.5115  Acc=0.4296  AUC=0.6771  Thresh=0.14  (92s)
+  Saved → models/next_steps_20260406_050134/step1/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9187     0.3544     0.5115     0.4296     0.6771       0.14
+====================================================================================================
+✓ Saved training report: reports/next_steps_20260406_050134/step1_longhorizon_scheduler.json
+
+--------------------------------------------------------------
+RUN TITLE: Step2_RecallAwareLoss_20260406_050134
+RUN TIMESTAMP: 20260406_050134
+HYPERPARAMETERS: model=JellyfishNet; integrated=true; lookback=14; epochs=20; patience=10; lr=0.001; bs=32; dropout=0.3; hidden=64; scheduler_factor=0.2; scheduler_patience=1; threshold_min=0.05; threshold_max=0.9; threshold_steps=81; threshold_min_precision=0.2; threshold_target_recall=0.95; positive_class_weight=1.6; include_live_xml=false
+REPORT_PATH: reports/next_steps_20260406_050134/step2_recall_weighted.json
+OUTPUT_DIR: models/next_steps_20260406_050134/step2
+--------------------------------------------------------------
+====================================================================================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+====================================================================================================
+  lookback_days: 14
+  use_integrated_data: True
+  weather_csv_path: None
+  include_live_xml: False
+  batch_size: 32
+  learning_rate: 0.001
+  dropout_prob: 0.3
+  num_epochs: 20
+  patience: 10
+  hybrid_hidden_dim: 64
+  model_names: ['JellyfishNet']
+  scheduler_factor: 0.2
+  scheduler_patience: 1
+  grad_clip_norm: 1.0
+  threshold_min: 0.05
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.2
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.6
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+1. LOADING DATA
+----------------------------------------------------------------------------------------------------
+================================================================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+================================================================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+
+================================================================================
+FINAL DATASET SUMMARY
+================================================================================
+Total sequences:                16893
+Input shape:                    (16893, 14, 33) (samples, days, features)
+Output shape:                   (16893,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5537 (32.8%)
+Negative samples:               11356 (67.2%)
+
+Unique beaches:                 20
+Date range:                     2011-07-01 to 2024-05-31
+================================================================================
+
+2. DATA NORMALISATION
+----------------------------------------------------------------------------------------------------
+✓ Normalised
+
+3. DATALOADERS
+----------------------------------------------------------------------------------------------------
+✓ Train: 11825  Val: 2533  Test: 2535
+
+4. TRAINING MODELS
+----------------------------------------------------------------------------------------------------
+Device: cpu
+
+
+── JellyfishNet ──────────────────────────────────────────────────────────────────────────────
+  Epoch   1/20  train_loss=0.7848  val_loss=0.7628  train_acc=0.6350  val_acc=0.6672  lr=0.001000
+  Epoch   2/20  train_loss=0.7655  val_loss=0.7642  train_acc=0.6469  val_acc=0.6917  lr=0.001000
+  Epoch   3/20  train_loss=0.7603  val_loss=0.7522  train_acc=0.6483  val_acc=0.6609  lr=0.001000
+  Epoch   4/20  train_loss=0.7533  val_loss=0.7546  train_acc=0.6558  val_acc=0.6775  lr=0.001000
+  Epoch   5/20  train_loss=0.7504  val_loss=0.7491  train_acc=0.6638  val_acc=0.6597  lr=0.001000
+  Epoch   6/20  train_loss=0.7473  val_loss=0.7534  train_acc=0.6628  val_acc=0.6459  lr=0.001000
+  Epoch   7/20  train_loss=0.7469  val_loss=0.7488  train_acc=0.6678  val_acc=0.6419  lr=0.001000
+  Epoch   8/20  train_loss=0.7433  val_loss=0.7513  train_acc=0.6632  val_acc=0.6625  lr=0.001000
+  Epoch   9/20  train_loss=0.7376  val_loss=0.7468  train_acc=0.6727  val_acc=0.6569  lr=0.001000
+  Epoch  10/20  train_loss=0.7356  val_loss=0.7552  train_acc=0.6743  val_acc=0.6502  lr=0.001000
+  Epoch  11/20  train_loss=0.7310  val_loss=0.7411  train_acc=0.6781  val_acc=0.6806  lr=0.001000
+  Epoch  12/20  train_loss=0.7271  val_loss=0.7440  train_acc=0.6807  val_acc=0.6763  lr=0.001000
+  Epoch  13/20  train_loss=0.7247  val_loss=0.7508  train_acc=0.6838  val_acc=0.6850  lr=0.000200
+  Epoch  14/20  train_loss=0.7088  val_loss=0.7453  train_acc=0.6849  val_acc=0.6763  lr=0.000200
+  Epoch  15/20  train_loss=0.7023  val_loss=0.7436  train_acc=0.6959  val_acc=0.6798  lr=0.000040
+  Epoch  16/20  train_loss=0.7022  val_loss=0.7439  train_acc=0.6989  val_acc=0.6767  lr=0.000040
+  Epoch  17/20  train_loss=0.6969  val_loss=0.7454  train_acc=0.6984  val_acc=0.6763  lr=0.000008
+  Epoch  18/20  train_loss=0.6979  val_loss=0.7453  train_acc=0.6997  val_acc=0.6771  lr=0.000008
+  Epoch  19/20  train_loss=0.6957  val_loss=0.7454  train_acc=0.7027  val_acc=0.6767  lr=0.000002
+  Epoch  20/20  train_loss=0.6976  val_loss=0.7454  train_acc=0.6972  val_acc=0.6763  lr=0.000002
+
+  Recall=0.9333  Precision=0.3549  F1=0.5142  Acc=0.4268  AUC=0.6790  Thresh=0.19  (92s)
+  Saved → models/next_steps_20260406_050134/step2/jellyfishnet_model.pth
+
+====================================================================================================
+TRAINING SUMMARY
+====================================================================================================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+────────────────────────────────────────────────────────────
+JellyfishNet             0.9333     0.3549     0.5142     0.4268     0.6790       0.19
+====================================================================================================
+✓ Saved training report: reports/next_steps_20260406_050134/step2_recall_weighted.json
+
+--------------------------------------------------------------
+RUN TITLE: Step3_Lookback21_StructuralRecallAware_20260406_050134
+RUN TIMESTAMP: 20260406_050134
+HYPERPARAMETERS: model=JellyfishNet; integrated=true; lookback=21; epochs=20; patience=10; lr=0.0007; bs=24; dropout=0.2; hidden=128; scheduler_factor=0.2; scheduler_patience=1; threshold_min=0.05; threshold_max=0.9; threshold_steps=81; threshold_min_precision=0.2; threshold_target_recall=0.95; positive_class_weight=1.6; include_live_xml=false
+REPORT_PATH: reports/next_steps_20260406_050134/step3_lookback21_structural_weighted.json
+OUTPUT_DIR: models/next_steps_20260406_050134/step3
+--------------------------------------------------------------

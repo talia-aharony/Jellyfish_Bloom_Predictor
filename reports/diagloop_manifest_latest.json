@@ -1,0 +1,53 @@
+{
+  "created_at": "2026-04-06T04:56:09",
+  "objective": "Max precision/F1 while enforcing recall >= 0.95",
+  "priority": [
+    "recall",
+    "precision",
+    "f1",
+    "accuracy"
+  ],
+  "runs": [
+    {
+      "label": "baseline",
+      "report_path": "reports/diagloop_run1_baseline.json",
+      "recall": 0.9490291262135923,
+      "precision": 0.34088927637314737,
+      "f1": 0.5016035920461834,
+      "accuracy": 0.38698224852071006,
+      "auc": 0.6704377159782788,
+      "threshold": 0.14,
+      "epochs_logged": 5,
+      "lr_points_logged": 5
+    },
+    {
+      "label": "scheduler",
+      "report_path": "reports/diagloop_run2_scheduler.json",
+      "recall": 0.9429611650485437,
+      "precision": 0.3492134831460674,
+      "f1": 0.5096753033781568,
+      "accuracy": 0.41025641025641024,
+      "auc": 0.6684775978392242,
+      "threshold": 0.14,
+      "epochs_logged": 5,
+      "lr_points_logged": 5
+    },
+    {
+      "label": "structural",
+      "report_path": "reports/diagloop_run3_structural.json",
+      "recall": 0.9441747572815534,
+      "precision": 0.3526745240253853,
+      "f1": 0.5135313531353135,
+      "accuracy": 0.4185404339250493,
+      "auc": 0.6684219187098898,
+      "threshold": 0.145625,
+      "epochs_logged": 5,
+      "lr_points_logged": 5
+    }
+  ],
+  "recall_improvement_vs_baseline": {
+    "scheduler": -0.0060679611650485965,
+    "structural": -0.004854368932038833
+  },
+  "best_under_constraint": null
+}

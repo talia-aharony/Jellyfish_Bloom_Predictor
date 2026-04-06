@@ -511,9 +511,13 @@ def load_and_consolidate_ims_weather(weather_csv_path=None):
         print(f"❌ Invalid weather_csv_path type: {type(weather_csv_path)}")
         return None
     
+    if len(files_to_load) > 1:
+        source_label = "data/IMS" if weather_csv_path is None else f"{len(files_to_load)} file(s)"
+        print(f"\n📡 Loading IMS weather data from {source_label}...")
+
     dfs = []
     for fpath in files_to_load:
-        df = load_and_parse_ims_weather(fpath)
+        df = load_and_parse_ims_weather(fpath, verbose=(len(files_to_load) == 1))
         if df is not None:
             dfs.append(df)
     
@@ -525,8 +529,8 @@ def load_and_consolidate_ims_weather(weather_csv_path=None):
         return dfs[0]
     
     # Consolidate multiple files: deduplicate by (station, date, hour)
-    print(f"\nConsolidating {len(dfs)} weather data files...")
     consolidated = pd.concat(dfs, ignore_index=True)
+    print(f"✓ Raw weather data loaded: {len(consolidated)} records")
     
     # Remove exact duplicates
     consol_before = len(consolidated)
@@ -534,12 +538,24 @@ def load_and_consolidate_ims_weather(weather_csv_path=None):
     dupes_removed = consol_before - len(consolidated)
     if dupes_removed > 0:
         print(f"  Removed {dupes_removed} duplicate records")
-    
-    print(f"✓ Consolidated: {len(consolidated)} total weather observations")
+
+    print(f"✓ Parsed weather data: {len(consolidated)} observations")
+    unique_stations = consolidated['station'].dropna().astype(str).str.strip().replace('', np.nan).dropna().unique().tolist()
+    print(f"  Unique stations: {len(unique_stations)}")
+    if unique_stations:
+        preview = ', '.join(unique_stations[:5])
+        if len(unique_stations) > 5:
+            preview += ", ..."
+        print(f"  Stations sample: {preview}")
+
+    print(f"  Date range: {consolidated['date'].min()} to {consolidated['date'].max()}")
+    print(f"  Temperature: {consolidated['Temperature_C'].min():.1f}°C to {consolidated['Temperature_C'].max():.1f}°C")
+    print(f"  Wind speed: {consolidated['Wind_Speed_ms'].min():.1f} to {consolidated['Wind_Speed_ms'].max():.1f} m/s")
+
     return consolidated
 
 
-def load_and_parse_ims_weather(weather_csv_path):
+def load_and_parse_ims_weather(weather_csv_path, verbose=True):
     """
     Load and parse IMS weather data into hourly records (similar to citizen science structure)
     
@@ -553,13 +569,15 @@ def load_and_parse_ims_weather(weather_csv_path):
         print(f"❌ Weather file not found at {weather_csv_path}")
         return None
     
-    print(f"\n📡 Loading IMS weather data from {weather_csv_path}...")
+    if verbose:
+        print(f"\n📡 Loading IMS weather data from {weather_csv_path}...")
     
     try:
         weather = pd.read_csv(weather_csv_path)
         weather.columns = weather.columns.str.strip()
         
-        print(f"✓ Raw weather data loaded: {len(weather)} records")
+        if verbose:
+            print(f"✓ Raw weather data loaded: {len(weather)} records")
         
         # Parse datetime
         weather['DateTime'] = pd.to_datetime(weather['Date & Time (UTC)'], format='%d-%m-%Y %H:%M')
@@ -593,16 +611,17 @@ def load_and_parse_ims_weather(weather_csv_path):
 
         unique_stations = weather['station'].dropna().unique().tolist()
         
-        print(f"✓ Parsed weather data: {len(weather)} observations")
-        print(f"  Unique stations: {len(unique_stations)}")
-        if unique_stations:
-            preview = ', '.join(unique_stations[:5])
-            if len(unique_stations) > 5:
-                preview += ", ..."
-            print(f"  Stations sample: {preview}")
-        print(f"  Date range: {weather['date'].min()} to {weather['date'].max()}")
-        print(f"  Temperature: {weather['Temperature_C'].min():.1f}°C to {weather['Temperature_C'].max():.1f}°C")
-        print(f"  Wind speed: {weather['Wind_Speed_ms'].min():.1f} to {weather['Wind_Speed_ms'].max():.1f} m/s")
+        if verbose:
+            print(f"✓ Parsed weather data: {len(weather)} observations")
+            print(f"  Unique stations: {len(unique_stations)}")
+            if unique_stations:
+                preview = ', '.join(unique_stations[:5])
+                if len(unique_stations) > 5:
+                    preview += ", ..."
+                print(f"  Stations sample: {preview}")
+            print(f"  Date range: {weather['date'].min()} to {weather['date'].max()}")
+            print(f"  Temperature: {weather['Temperature_C'].min():.1f}°C to {weather['Temperature_C'].max():.1f}°C")
+            print(f"  Wind speed: {weather['Wind_Speed_ms'].min():.1f} to {weather['Wind_Speed_ms'].max():.1f} m/s")
         
         return weather
         

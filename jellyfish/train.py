@@ -74,6 +74,8 @@ if __package__ in (None, ""):
         DEFAULT_THRESHOLD_MAX,
         DEFAULT_THRESHOLD_STEPS,
         DEFAULT_THRESHOLD_MIN_PRECISION,
+        DEFAULT_THRESHOLD_TARGET_RECALL,
+        DEFAULT_POSITIVE_CLASS_WEIGHT,
     )
     from jellyfish.models import (
         BaselineLogisticRegression,
@@ -112,6 +114,8 @@ else:
         DEFAULT_THRESHOLD_MAX,
         DEFAULT_THRESHOLD_STEPS,
         DEFAULT_THRESHOLD_MIN_PRECISION,
+        DEFAULT_THRESHOLD_TARGET_RECALL,
+        DEFAULT_POSITIVE_CLASS_WEIGHT,
     )
     from .models import (
         BaselineLogisticRegression,
@@ -175,6 +179,8 @@ class Trainer:
         threshold_max=DEFAULT_THRESHOLD_MAX,
         threshold_steps=DEFAULT_THRESHOLD_STEPS,
         threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
+        threshold_target_recall=DEFAULT_THRESHOLD_TARGET_RECALL,
+        positive_class_weight=DEFAULT_POSITIVE_CLASS_WEIGHT,
     ):
         self.model      = model.to(device)
         self.device     = device
@@ -184,9 +190,11 @@ class Trainer:
         self.threshold_max = float(threshold_max)
         self.threshold_steps = int(threshold_steps)
         self.threshold_min_precision = float(threshold_min_precision)
+        self.threshold_target_recall = float(threshold_target_recall)
+        self.positive_class_weight = float(positive_class_weight)
         self.best_state = None
         self.optimizer  = optim.Adam(model.parameters(), lr=learning_rate)
-        self.criterion  = nn.BCELoss()
+        self.criterion  = nn.BCELoss(reduction="none")
         self.scheduler  = optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer,
             mode="min",
@@ -199,6 +207,17 @@ class Trainer:
         self.val_accs     = []
         self.lr_history   = []
 
+    def _loss(self, out, y_true):
+        raw = self.criterion(out, y_true)
+        if self.positive_class_weight != 1.0:
+            weights = torch.where(
+                y_true >= 0.5,
+                torch.full_like(y_true, self.positive_class_weight),
+                torch.ones_like(y_true),
+            )
+            raw = raw * weights
+        return raw.mean()
+
     def train_epoch(self, loader):
         self.model.train()
         total_loss = correct = total = 0
@@ -206,7 +225,7 @@ class Trainer:
             X_b = X_b.to(self.device)
             y_b = y_b.to(self.device).unsqueeze(1)
             out  = self.model(X_b)
-            loss = self.criterion(out, y_b)
+            loss = self._loss(out, y_b)
             self.optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_norm)
@@ -224,7 +243,7 @@ class Trainer:
                 X_b = X_b.to(self.device)
                 y_b = y_b.to(self.device).unsqueeze(1)
                 out  = self.model(X_b)
-                loss = self.criterion(out, y_b)
+                loss = self._loss(out, y_b)
                 total_loss += loss.item()
                 correct    += ((out > 0.5).float() == y_b).sum().item()
                 total      += y_b.size(0)
@@ -286,22 +305,42 @@ class Trainer:
             "predictions": preds, "labels": labels, "threshold": threshold,
         }
 
-    def find_best_threshold(self, val_loader, min_precision=None):
+    def find_best_threshold(self, val_loader, min_precision=None, target_recall=None):
         preds, labels = self._collect(val_loader)
         min_precision = self.threshold_min_precision if min_precision is None else float(min_precision)
-        best_thresh, best_recall = 0.5, -1.0
-        fallback_thresh, fallback_recall = 0.5, -1.0
+        target_recall = self.threshold_target_recall if target_recall is None else float(target_recall)
+
+        best_thresh = 0.5
+        best_metrics = None
+        fallback_thresh = 0.5
+        fallback_metrics = None
+
         for t in np.linspace(self.threshold_min, self.threshold_max, self.threshold_steps):
             metrics = self._metrics(labels, preds, threshold=t)
-            recall = metrics["recall"]
-            if recall > fallback_recall:
-                fallback_recall, fallback_thresh = recall, float(t)
-            if metrics["precision"] >= min_precision and recall > best_recall:
-                best_recall, best_thresh = recall, float(t)
+            # Candidate set follows user priority: recall >= target first.
+            if metrics["recall"] >= target_recall:
+                if (best_metrics is None or
+                    (metrics["precision"], metrics["f1"], metrics["accuracy"]) >
+                    (best_metrics["precision"], best_metrics["f1"], best_metrics["accuracy"])):
+                    best_metrics = metrics
+                    best_thresh = float(t)
 
-        if best_recall < 0:
-            return fallback_thresh, fallback_recall
-        return best_thresh, best_recall
+            # Fallback if no threshold reaches target recall:
+            # keep minimum precision, maximize recall then precision then F1.
+            if metrics["precision"] >= min_precision:
+                if (fallback_metrics is None or
+                    (metrics["recall"], metrics["precision"], metrics["f1"]) >
+                    (fallback_metrics["recall"], fallback_metrics["precision"], fallback_metrics["f1"])):
+                    fallback_metrics = metrics
+                    fallback_thresh = float(t)
+
+        if best_metrics is not None:
+            return best_thresh, best_metrics["recall"]
+        if fallback_metrics is not None:
+            return fallback_thresh, fallback_metrics["recall"]
+
+        default_metrics = self._metrics(labels, preds, threshold=0.5)
+        return 0.5, default_metrics["recall"]
 
     def test(self, test_loader, threshold=0.5):
         preds, labels = self._collect(test_loader)
@@ -383,6 +422,8 @@ def train_all_models(
     threshold_max=DEFAULT_THRESHOLD_MAX,
     threshold_steps=DEFAULT_THRESHOLD_STEPS,
     threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
+    threshold_target_recall=DEFAULT_THRESHOLD_TARGET_RECALL,
+    positive_class_weight=DEFAULT_POSITIVE_CLASS_WEIGHT,
 ):
     """Train selected models on the full (all-beach) dataset."""
     os.makedirs(output_dir, exist_ok=True)
@@ -410,7 +451,9 @@ def train_all_models(
         "threshold_max":              float(threshold_max),
         "threshold_steps":            int(threshold_steps),
         "threshold_min_precision":    float(threshold_min_precision),
-        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+        "threshold_target_recall":    float(threshold_target_recall),
+        "positive_class_weight":      float(positive_class_weight),
+        "threshold_selection_metric": "maximize_precision_then_f1_subject_to_target_recall",
     }
     for k, v in config.items():
         print(f"  {k}: {v}")
@@ -505,6 +548,8 @@ def train_all_models(
             threshold_max=threshold_max,
             threshold_steps=threshold_steps,
             threshold_min_precision=threshold_min_precision,
+            threshold_target_recall=threshold_target_recall,
+            positive_class_weight=positive_class_weight,
         )
         trainer.fit(tr_ld, val_ld, epochs=num_epochs, patience=patience)
         thresh, val_recall = trainer.find_best_threshold(val_ld)
@@ -569,6 +614,8 @@ def finetune_per_beach(
     threshold_max=DEFAULT_THRESHOLD_MAX,
     threshold_steps=DEFAULT_THRESHOLD_STEPS,
     threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
+    threshold_target_recall=DEFAULT_THRESHOLD_TARGET_RECALL,
+    positive_class_weight=DEFAULT_POSITIVE_CLASS_WEIGHT,
 ):
     """
     Fine-tune a separate JellyfishNet for every beach.
@@ -673,6 +720,8 @@ def finetune_per_beach(
             threshold_max=threshold_max,
             threshold_steps=threshold_steps,
             threshold_min_precision=threshold_min_precision,
+            threshold_target_recall=threshold_target_recall,
+            positive_class_weight=positive_class_weight,
         )
         trainer.fit(tr_ld, val_ld, epochs=finetune_epochs, patience=DEFAULT_PER_BEACH_PATIENCE)
 
@@ -747,6 +796,8 @@ if __name__ == "__main__":
     parser.add_argument("--threshold-max",       type=float, default=DEFAULT_THRESHOLD_MAX)
     parser.add_argument("--threshold-steps",     type=int,   default=DEFAULT_THRESHOLD_STEPS)
     parser.add_argument("--threshold-min-precision", type=float, default=DEFAULT_THRESHOLD_MIN_PRECISION)
+    parser.add_argument("--threshold-target-recall", type=float, default=DEFAULT_THRESHOLD_TARGET_RECALL)
+    parser.add_argument("--positive-class-weight", type=float, default=DEFAULT_POSITIVE_CLASS_WEIGHT)
 
     # Per-beach fine-tuning
     parser.add_argument("--finetune-per-beach",  action="store_true")
@@ -789,6 +840,8 @@ if __name__ == "__main__":
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
             threshold_min_precision=args.threshold_min_precision,
+            threshold_target_recall=args.threshold_target_recall,
+            positive_class_weight=args.positive_class_weight,
         )
     else:
         train_all_models(
@@ -812,4 +865,6 @@ if __name__ == "__main__":
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
             threshold_min_precision=args.threshold_min_precision,
+            threshold_target_recall=args.threshold_target_recall,
+            positive_class_weight=args.positive_class_weight,
         )
