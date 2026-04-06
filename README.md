@@ -144,14 +144,14 @@ For each run, summarize:
 Use this helper to compare saved JSON reports and rank runs by your chosen metric:
 
 ```bash
-python scripts/compare_reports.py --model Hybrid --sort-by f1
+python scripts/compare_reports.py --model Hybrid --sort-by recall
 ```
 
 Useful variants:
 
 ```bash
 python scripts/compare_reports.py --pattern "training_report*.json" --extra-pattern "reports/*.json" --model Hybrid --sort-by auc --top-k 10
-python scripts/compare_reports.py --model LSTM --sort-by f1
+python scripts/compare_reports.py --model LSTM --sort-by recall
 ```
 
 This makes your hyperparameter commentary easier: cite the top-ranked run and compare it against the next 2-3 runs by F1/AUC and precision/recall tradeoff.

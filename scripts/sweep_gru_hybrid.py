@@ -189,7 +189,7 @@ def main():
     parser = argparse.ArgumentParser(description="Large GRU/Hybrid sweep runner")
     parser.add_argument("--preset", type=str, default=DEFAULT_SWEEP_PRESET, choices=sorted(PRESETS.keys()))
     parser.add_argument("--search-mode", type=str, default="grid", choices=["grid", "adaptive"], help="Sweep strategy")
-    parser.add_argument("--sort-by", type=str, default="f1", choices=["f1", "auc", "accuracy", "precision", "recall", "val_best_f1"], help="Objective metric for adaptive search")
+    parser.add_argument("--sort-by", type=str, default="recall", choices=["f1", "auc", "accuracy", "precision", "recall", "val_best_f1"], help="Objective metric for adaptive search")
     parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK_DAYS, help="Single lookback override")
     parser.add_argument("--lookback-days-list", type=str, default="", help="Comma list override, e.g. 7,14,21")
     parser.add_argument("--weather-csv-path", type=str, default=DEFAULT_WEATHER_CSV_PATH)
@@ -466,7 +466,7 @@ def main():
     rank_model = [m.strip() for m in args.models.split(',') if m.strip()]
     rank_model = rank_model[-1] if rank_model else 'JellyfishNet'
     print("Next: rank reports with:")
-    print(f"  python scripts/compare_reports.py --pattern \"reports/*.json\" --model {rank_model} --sort-by f1")
+    print(f"  python scripts/compare_reports.py --pattern \"reports/*.json\" --model {rank_model} --sort-by recall")
 
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ def build_rows(paths: List[str], model_name: str) -> List[Dict[str, Any]]:
             "f1": float(metrics.get("f1", 0.0)),
             "auc": float(metrics.get("auc", 0.0)),
             "threshold": float(metrics.get("threshold", 0.5)),
+            "val_best_recall": float(metrics.get("val_best_recall", 0.0)),
             "val_best_f1": float(metrics.get("val_best_f1", 0.0)),
             "batch_size": config.get("batch_size", "-"),
             "learning_rate": config.get("learning_rate", "-"),
@@ -62,9 +63,12 @@ def build_rows(paths: List[str], model_name: str) -> List[Dict[str, Any]]:
 def format_row(row: Dict[str, Any]) -> str:
     return (
         f"{row['file']:<36} "
+        f"{row['recall']:<8.4f} "
+        f"{row['precision']:<8.4f} "
         f"{row['f1']:<8.4f} "
         f"{row['auc']:<8.4f} "
         f"{row['threshold']:<8.2f} "
+        f"{row['val_best_recall']:<8.4f} "
         f"{row['val_best_f1']:<8.4f} "
         f"{row['accuracy']:<8.4f} "
         f"{str(row['learning_rate']):<10} "
@@ -97,9 +101,9 @@ def main() -> None:
     parser.add_argument(
         "--sort-by",
         type=str,
-        default="f1",
+        default="recall",
         choices=["f1", "auc", "accuracy", "precision", "recall"],
-        help="Metric used for ranking (default: f1)",
+        help="Metric used for ranking (default: recall)",
     )
     parser.add_argument(
         "--top-k",
@@ -129,9 +133,9 @@ def main() -> None:
     print(f"Total runs considered: {len(rows)}")
     print()
     print(
-        f"{'Report File':<36} {'F1':<8} {'AUC':<8} {'Thr':<8} {'ValF1':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
+        f"{'Report File':<36} {'Recall':<8} {'Prec':<8} {'F1':<8} {'AUC':<8} {'Thr':<8} {'ValRec':<8} {'ValF1':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
     )
-    print("-" * 124)
+    print("-" * 148)
     for row in top_rows:
         print(format_row(row))
 
@@ -141,8 +145,16 @@ def main() -> None:
     print(f"File: {best['file']}")
     print(f"Path: {best['path']}")
     print(f"Timestamp: {best['timestamp']}")
-    print(f"F1: {best['f1']:.4f}, AUC: {best['auc']:.4f}, Accuracy: {best['accuracy']:.4f}")
-    print(f"Threshold: {best['threshold']:.2f}, Validation-best F1: {best['val_best_f1']:.4f}")
+    print(
+        f"Recall: {best['recall']:.4f}, Precision: {best['precision']:.4f}, "
+        f"F1: {best['f1']:.4f}"
+    )
+    print(f"Accuracy: {best['accuracy']:.4f}, AUC: {best['auc']:.4f}")
+    print(
+        f"Threshold: {best['threshold']:.2f}, "
+        f"Validation-best Recall: {best['val_best_recall']:.4f}, "
+        f"Validation-best F1: {best['val_best_f1']:.4f}"
+    )
     print(
         "Config: "
         f"lr={best['learning_rate']}, "

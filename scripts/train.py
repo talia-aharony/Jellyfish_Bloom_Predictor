@@ -33,6 +33,7 @@ from jellyfish.settings import (
     DEFAULT_THRESHOLD_MIN,
     DEFAULT_THRESHOLD_MAX,
     DEFAULT_THRESHOLD_STEPS,
+    DEFAULT_THRESHOLD_MIN_PRECISION,
 )
 
 
@@ -57,6 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('--threshold-min', type=float, default=DEFAULT_THRESHOLD_MIN)
     parser.add_argument('--threshold-max', type=float, default=DEFAULT_THRESHOLD_MAX)
     parser.add_argument('--threshold-steps', type=int, default=DEFAULT_THRESHOLD_STEPS)
+    parser.add_argument('--threshold-min-precision', type=float, default=DEFAULT_THRESHOLD_MIN_PRECISION)
 
     parser.add_argument('--finetune-per-beach', action='store_true')
     parser.add_argument('--global-checkpoint', type=str, default=None)
@@ -88,6 +90,7 @@ if __name__ == "__main__":
             threshold_min=args.threshold_min,
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
+            threshold_min_precision=args.threshold_min_precision,
         )
     else:
         train_all_models(
@@ -110,4 +113,5 @@ if __name__ == "__main__":
             threshold_min=args.threshold_min,
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
+            threshold_min_precision=args.threshold_min_precision,
         )

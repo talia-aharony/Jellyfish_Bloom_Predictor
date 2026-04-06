@@ -73,6 +73,7 @@ if __package__ in (None, ""):
         DEFAULT_THRESHOLD_MIN,
         DEFAULT_THRESHOLD_MAX,
         DEFAULT_THRESHOLD_STEPS,
+        DEFAULT_THRESHOLD_MIN_PRECISION,
     )
     from jellyfish.models import (
         BaselineLogisticRegression,
@@ -110,6 +111,7 @@ else:
         DEFAULT_THRESHOLD_MIN,
         DEFAULT_THRESHOLD_MAX,
         DEFAULT_THRESHOLD_STEPS,
+        DEFAULT_THRESHOLD_MIN_PRECISION,
     )
     from .models import (
         BaselineLogisticRegression,
@@ -172,6 +174,7 @@ class Trainer:
         threshold_min=DEFAULT_THRESHOLD_MIN,
         threshold_max=DEFAULT_THRESHOLD_MAX,
         threshold_steps=DEFAULT_THRESHOLD_STEPS,
+        threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
     ):
         self.model      = model.to(device)
         self.device     = device
@@ -180,6 +183,7 @@ class Trainer:
         self.threshold_min = float(threshold_min)
         self.threshold_max = float(threshold_max)
         self.threshold_steps = int(threshold_steps)
+        self.threshold_min_precision = float(threshold_min_precision)
         self.best_state = None
         self.optimizer  = optim.Adam(model.parameters(), lr=learning_rate)
         self.criterion  = nn.BCELoss()
@@ -279,14 +283,22 @@ class Trainer:
             "predictions": preds, "labels": labels, "threshold": threshold,
         }
 
-    def find_best_threshold(self, val_loader):
+    def find_best_threshold(self, val_loader, min_precision=None):
         preds, labels = self._collect(val_loader)
-        best_thresh, best_f1 = 0.5, -1.0
+        min_precision = self.threshold_min_precision if min_precision is None else float(min_precision)
+        best_thresh, best_recall = 0.5, -1.0
+        fallback_thresh, fallback_recall = 0.5, -1.0
         for t in np.linspace(self.threshold_min, self.threshold_max, self.threshold_steps):
-            f1 = self._metrics(labels, preds, threshold=t)["f1"]
-            if f1 > best_f1:
-                best_f1, best_thresh = f1, float(t)
-        return best_thresh, best_f1
+            metrics = self._metrics(labels, preds, threshold=t)
+            recall = metrics["recall"]
+            if recall > fallback_recall:
+                fallback_recall, fallback_thresh = recall, float(t)
+            if metrics["precision"] >= min_precision and recall > best_recall:
+                best_recall, best_thresh = recall, float(t)
+
+        if best_recall < 0:
+            return fallback_thresh, fallback_recall
+        return best_thresh, best_recall
 
     def test(self, test_loader, threshold=0.5):
         preds, labels = self._collect(test_loader)
@@ -319,12 +331,13 @@ def save_training_report(results, config, output_path):
         "config": config,
         "results": {
             name: {
-                "accuracy":         float(m["accuracy"]),
-                "precision":        float(m["precision"]),
                 "recall":           float(m["recall"]),
+                "precision":        float(m["precision"]),
                 "f1":               float(m["f1"]),
+                "accuracy":         float(m["accuracy"]),
                 "auc":              float(m["auc"]),
                 "threshold":        float(m.get("threshold", 0.5)),
+                "val_best_recall":  float(m.get("val_best_recall", 0.0)),
                 "val_best_f1":      float(m.get("val_best_f1", 0.0)),
                 "confusion_matrix": m["confusion_matrix"].tolist(),
             }
@@ -361,6 +374,7 @@ def train_all_models(
     threshold_min=DEFAULT_THRESHOLD_MIN,
     threshold_max=DEFAULT_THRESHOLD_MAX,
     threshold_steps=DEFAULT_THRESHOLD_STEPS,
+    threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
 ):
     """Train selected models on the full (all-beach) dataset."""
     os.makedirs(output_dir, exist_ok=True)
@@ -387,7 +401,8 @@ def train_all_models(
         "threshold_min":              float(threshold_min),
         "threshold_max":              float(threshold_max),
         "threshold_steps":            int(threshold_steps),
-        "threshold_selection_metric": "f1_on_validation",
+        "threshold_min_precision":    float(threshold_min_precision),
+        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
     }
     for k, v in config.items():
         print(f"  {k}: {v}")
@@ -481,11 +496,12 @@ def train_all_models(
             threshold_min=threshold_min,
             threshold_max=threshold_max,
             threshold_steps=threshold_steps,
+            threshold_min_precision=threshold_min_precision,
         )
         trainer.fit(tr_ld, val_ld, epochs=num_epochs, patience=patience)
-        thresh, val_f1 = trainer.find_best_threshold(val_ld)
+        thresh, val_recall = trainer.find_best_threshold(val_ld)
         metrics        = trainer.test(te_ld, threshold=thresh)
-        metrics["val_best_f1"] = val_f1
+        metrics["val_best_recall"] = val_recall
         elapsed = time.time() - t0
 
         save_path = os.path.join(output_dir, f"{name.lower()}_model.pth")
@@ -493,7 +509,8 @@ def train_all_models(
         results[name] = metrics
 
         print(
-            f"\n  Acc={metrics['accuracy']:.4f}  F1={metrics['f1']:.4f}  "
+            f"\n  Recall={metrics['recall']:.4f}  Precision={metrics['precision']:.4f}  "
+            f"F1={metrics['f1']:.4f}  Acc={metrics['accuracy']:.4f}  "
             f"AUC={metrics['auc']:.4f}  Thresh={thresh:.2f}  ({elapsed:.0f}s)"
         )
         print(f"  Saved → {save_path}")
@@ -502,12 +519,12 @@ def train_all_models(
     print("\n" + "=" * 100)
     print("TRAINING SUMMARY")
     print("=" * 100)
-    print(f"{'Model':<20} {'Accuracy':>10} {'F1':>10} {'AUC':>10} {'Threshold':>10}")
+    print(f"{'Model':<20} {'Recall':>10} {'Precision':>10} {'F1':>10} {'Accuracy':>10} {'AUC':>10} {'Threshold':>10}")
     print("─" * 60)
     for name, m in sorted(results.items()):
         print(
-            f"{name:<20} {m['accuracy']:>10.4f} {m['f1']:>10.4f} "
-            f"{m['auc']:>10.4f} {m['threshold']:>10.2f}"
+            f"{name:<20} {m['recall']:>10.4f} {m['precision']:>10.4f} {m['f1']:>10.4f} "
+            f"{m['accuracy']:>10.4f} {m['auc']:>10.4f} {m['threshold']:>10.2f}"
         )
     print("=" * 100)
 
@@ -538,6 +555,7 @@ def finetune_per_beach(
     threshold_min=DEFAULT_THRESHOLD_MIN,
     threshold_max=DEFAULT_THRESHOLD_MAX,
     threshold_steps=DEFAULT_THRESHOLD_STEPS,
+    threshold_min_precision=DEFAULT_THRESHOLD_MIN_PRECISION,
 ):
     """
     Fine-tune a separate JellyfishNet for every beach.
@@ -609,6 +627,7 @@ def finetune_per_beach(
             input_dim=n_features,
             hidden_dim=hybrid_hidden_dim,
             dropout_prob=dropout_prob,
+            max_len=lookback_days,
         )
         model.load_state_dict(torch.load(global_checkpoint, map_location=device))
 
@@ -640,12 +659,13 @@ def finetune_per_beach(
             threshold_min=threshold_min,
             threshold_max=threshold_max,
             threshold_steps=threshold_steps,
+            threshold_min_precision=threshold_min_precision,
         )
         trainer.fit(tr_ld, val_ld, epochs=finetune_epochs, patience=DEFAULT_PER_BEACH_PATIENCE)
 
-        thresh, val_f1 = trainer.find_best_threshold(val_ld)
+        thresh, val_recall = trainer.find_best_threshold(val_ld)
         metrics        = trainer.test(te_ld, threshold=thresh)
-        metrics["val_best_f1"] = val_f1
+        metrics["val_best_recall"] = val_recall
         metrics["n_samples"]   = n
 
         save_path = os.path.join(output_dir, f"beach_{beach_id}_model.pth")
@@ -653,7 +673,8 @@ def finetune_per_beach(
         results[str(beach_id)] = metrics
 
         print(
-            f"  Acc={metrics['accuracy']:.4f}  F1={metrics['f1']:.4f}  "
+            f"  Recall={metrics['recall']:.4f}  Precision={metrics['precision']:.4f}  "
+            f"F1={metrics['f1']:.4f}  Acc={metrics['accuracy']:.4f}  "
             f"AUC={metrics['auc']:.4f}  Thresh={thresh:.2f}  → {save_path}"
         )
 
@@ -707,6 +728,7 @@ if __name__ == "__main__":
     parser.add_argument("--threshold-min",       type=float, default=DEFAULT_THRESHOLD_MIN)
     parser.add_argument("--threshold-max",       type=float, default=DEFAULT_THRESHOLD_MAX)
     parser.add_argument("--threshold-steps",     type=int,   default=DEFAULT_THRESHOLD_STEPS)
+    parser.add_argument("--threshold-min-precision", type=float, default=DEFAULT_THRESHOLD_MIN_PRECISION)
 
     # Per-beach fine-tuning
     parser.add_argument("--finetune-per-beach",  action="store_true")
@@ -748,6 +770,7 @@ if __name__ == "__main__":
             threshold_min=args.threshold_min,
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
+            threshold_min_precision=args.threshold_min_precision,
         )
     else:
         train_all_models(
@@ -770,4 +793,5 @@ if __name__ == "__main__":
             threshold_min=args.threshold_min,
             threshold_max=args.threshold_max,
             threshold_steps=args.threshold_steps,
+            threshold_min_precision=args.threshold_min_precision,
         )
