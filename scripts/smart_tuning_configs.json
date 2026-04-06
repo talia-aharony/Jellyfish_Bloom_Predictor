@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-04-06T05:42:40.478268",
-  "total_configs": 150,
+  "timestamp": "2026-04-06T06:01:28.163784",
+  "total_configs": 90,
   "strategy": "Stratified: 60% HC, 30% explore, 10% edges",
   "configs": [
     {
@@ -490,868 +490,328 @@
       "scheduler_factor": 0.35
     },
     {
-      "lookback_days": 23,
-      "hidden_dim": 160,
-      "dropout": 0.13,
-      "lr": 0.000315,
-      "batch_size": 23,
-      "positive_class_weight": 1.33,
-      "scheduler_factor": 0.3
+      "lookback_days": 16,
+      "hidden_dim": 64,
+      "dropout": 0.24,
+      "lr": 0.000859,
+      "batch_size": 20,
+      "positive_class_weight": 1.27,
+      "scheduler_factor": 0.25
     },
     {
-      "lookback_days": 20,
-      "hidden_dim": 160,
-      "dropout": 0.13,
-      "lr": 0.000357,
-      "batch_size": 19,
-      "positive_class_weight": 1.54,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
+      "lookback_days": 28,
       "hidden_dim": 224,
-      "dropout": 0.16,
-      "lr": 0.000243,
-      "batch_size": 22,
-      "positive_class_weight": 1.77,
-      "scheduler_factor": 0.2
+      "dropout": 0.05,
+      "lr": 0.000233,
+      "batch_size": 16,
+      "positive_class_weight": 1.34,
+      "scheduler_factor": 0.15
     },
     {
       "lookback_days": 21,
-      "hidden_dim": 128,
-      "dropout": 0.11,
-      "lr": 0.000282,
+      "hidden_dim": 192,
+      "dropout": 0.22,
+      "lr": 0.000208,
+      "batch_size": 12,
+      "positive_class_weight": 1.26,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 23,
+      "hidden_dim": 192,
+      "dropout": 0.12,
+      "lr": 0.000903,
       "batch_size": 20,
-      "positive_class_weight": 1.39,
-      "scheduler_factor": 0.35
+      "positive_class_weight": 1.42,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 22,
+      "hidden_dim": 160,
+      "dropout": 0.09,
+      "lr": 0.000669,
+      "batch_size": 16,
+      "positive_class_weight": 1.99,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 15,
+      "hidden_dim": 64,
+      "dropout": 0.21,
+      "lr": 0.000346,
+      "batch_size": 32,
+      "positive_class_weight": 1.56,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 14,
+      "hidden_dim": 256,
+      "dropout": 0.2,
+      "lr": 0.000674,
+      "batch_size": 8,
+      "positive_class_weight": 1.38,
+      "scheduler_factor": 0.1
+    },
+    {
+      "lookback_days": 27,
+      "hidden_dim": 160,
+      "dropout": 0.22,
+      "lr": 0.000335,
+      "batch_size": 16,
+      "positive_class_weight": 1.1,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 25,
+      "hidden_dim": 192,
+      "dropout": 0.23,
+      "lr": 0.000232,
+      "batch_size": 20,
+      "positive_class_weight": 1.95,
+      "scheduler_factor": 0.25
     },
     {
       "lookback_days": 16,
-      "hidden_dim": 192,
-      "dropout": 0.08,
-      "lr": 0.001,
+      "hidden_dim": 96,
+      "dropout": 0.18,
+      "lr": 0.000412,
       "batch_size": 16,
-      "positive_class_weight": 1.55,
-      "scheduler_factor": 0.35
+      "positive_class_weight": 1.6,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 24,
+      "hidden_dim": 192,
+      "dropout": 0.2,
+      "lr": 0.000715,
+      "batch_size": 8,
+      "positive_class_weight": 1.11,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 23,
+      "hidden_dim": 96,
+      "dropout": 0.06,
+      "lr": 0.000484,
+      "batch_size": 24,
+      "positive_class_weight": 1.74,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 24,
+      "hidden_dim": 128,
+      "dropout": 0.07,
+      "lr": 0.000252,
+      "batch_size": 12,
+      "positive_class_weight": 1.84,
+      "scheduler_factor": 0.1
     },
     {
       "lookback_days": 26,
+      "hidden_dim": 224,
+      "dropout": 0.07,
+      "lr": 0.000618,
+      "batch_size": 12,
+      "positive_class_weight": 1.4,
+      "scheduler_factor": 0.2
+    },
+    {
+      "lookback_days": 23,
+      "hidden_dim": 96,
+      "dropout": 0.07,
+      "lr": 0.000229,
+      "batch_size": 16,
+      "positive_class_weight": 1.58,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 14,
+      "hidden_dim": 224,
+      "dropout": 0.21,
+      "lr": 0.000919,
+      "batch_size": 8,
+      "positive_class_weight": 1.59,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 19,
+      "hidden_dim": 160,
+      "dropout": 0.07,
+      "lr": 0.000699,
+      "batch_size": 32,
+      "positive_class_weight": 1.71,
+      "scheduler_factor": 0.15
+    },
+    {
+      "lookback_days": 23,
       "hidden_dim": 128,
-      "dropout": 0.11,
-      "lr": 0.000324,
+      "dropout": 0.07,
+      "lr": 0.000442,
+      "batch_size": 24,
+      "positive_class_weight": 1.41,
+      "scheduler_factor": 0.4
+    },
+    {
+      "lookback_days": 23,
+      "hidden_dim": 160,
+      "dropout": 0.07,
+      "lr": 0.000242,
+      "batch_size": 8,
+      "positive_class_weight": 1.74,
+      "scheduler_factor": 0.2
+    },
+    {
+      "lookback_days": 26,
+      "hidden_dim": 160,
+      "dropout": 0.24,
+      "lr": 0.000366,
+      "batch_size": 8,
+      "positive_class_weight": 1.08,
+      "scheduler_factor": 0.1
+    },
+    {
+      "lookback_days": 19,
+      "hidden_dim": 192,
+      "dropout": 0.24,
+      "lr": 0.000204,
+      "batch_size": 24,
+      "positive_class_weight": 1.04,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 19,
+      "hidden_dim": 192,
+      "dropout": 0.25,
+      "lr": 0.000225,
+      "batch_size": 16,
+      "positive_class_weight": 1.7,
+      "scheduler_factor": 0.1
+    },
+    {
+      "lookback_days": 15,
+      "hidden_dim": 256,
+      "dropout": 0.18,
+      "lr": 0.000613,
+      "batch_size": 8,
+      "positive_class_weight": 1.63,
+      "scheduler_factor": 0.4
+    },
+    {
+      "lookback_days": 16,
+      "hidden_dim": 256,
+      "dropout": 0.06,
+      "lr": 0.000314,
+      "batch_size": 32,
+      "positive_class_weight": 1.46,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 18,
+      "hidden_dim": 96,
+      "dropout": 0.09,
+      "lr": 0.000422,
       "batch_size": 12,
       "positive_class_weight": 1.23,
       "scheduler_factor": 0.25
     },
     {
-      "lookback_days": 14,
-      "hidden_dim": 128,
-      "dropout": 0.13,
-      "lr": 0.000424,
-      "batch_size": 23,
-      "positive_class_weight": 1.67,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 224,
-      "dropout": 0.12,
-      "lr": 0.000198,
-      "batch_size": 16,
-      "positive_class_weight": 1.0,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 18,
-      "hidden_dim": 192,
-      "dropout": 0.08,
-      "lr": 0.000395,
-      "batch_size": 16,
-      "positive_class_weight": 1.55,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 192,
-      "dropout": 0.15,
-      "lr": 0.000665,
-      "batch_size": 23,
-      "positive_class_weight": 1.39,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 160,
-      "dropout": 0.14,
-      "lr": 0.000168,
-      "batch_size": 19,
-      "positive_class_weight": 1.52,
-      "scheduler_factor": 0.35
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 128,
-      "dropout": 0.12,
-      "lr": 0.000316,
-      "batch_size": 14,
-      "positive_class_weight": 1.77,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 26,
-      "hidden_dim": 160,
-      "dropout": 0.09,
-      "lr": 0.000406,
-      "batch_size": 23,
-      "positive_class_weight": 1.5,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 128,
-      "dropout": 0.1,
-      "lr": 0.000233,
-      "batch_size": 20,
-      "positive_class_weight": 1.65,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 128,
-      "dropout": 0.13,
-      "lr": 0.000584,
-      "batch_size": 16,
-      "positive_class_weight": 1.5,
-      "scheduler_factor": 0.35
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 160,
-      "dropout": 0.13,
-      "lr": 0.000361,
-      "batch_size": 12,
-      "positive_class_weight": 1.39,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 192,
-      "dropout": 0.19,
-      "lr": 0.001,
-      "batch_size": 19,
-      "positive_class_weight": 1.34,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 160,
-      "dropout": 0.08,
-      "lr": 0.000296,
-      "batch_size": 16,
-      "positive_class_weight": 1.32,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 192,
-      "dropout": 0.06,
-      "lr": 0.000133,
-      "batch_size": 15,
-      "positive_class_weight": 1.57,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 160,
-      "dropout": 0.15,
-      "lr": 0.001,
-      "batch_size": 20,
-      "positive_class_weight": 1.15,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 18,
-      "hidden_dim": 224,
-      "dropout": 0.14,
-      "lr": 0.001,
-      "batch_size": 12,
-      "positive_class_weight": 1.41,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 16,
-      "hidden_dim": 160,
-      "dropout": 0.18,
-      "lr": 0.000598,
-      "batch_size": 12,
-      "positive_class_weight": 1.75,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 128,
-      "dropout": 0.21,
-      "lr": 0.000502,
-      "batch_size": 16,
-      "positive_class_weight": 1.51,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 160,
-      "dropout": 0.07,
-      "lr": 0.000278,
-      "batch_size": 15,
-      "positive_class_weight": 1.31,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 160,
-      "dropout": 0.15,
-      "lr": 0.000282,
-      "batch_size": 21,
-      "positive_class_weight": 1.44,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 26,
-      "hidden_dim": 192,
-      "dropout": 0.13,
-      "lr": 0.000955,
-      "batch_size": 23,
-      "positive_class_weight": 1.39,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 192,
-      "dropout": 0.23,
-      "lr": 0.000781,
-      "batch_size": 13,
-      "positive_class_weight": 1.77,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 224,
-      "dropout": 0.12,
-      "lr": 0.000519,
-      "batch_size": 13,
-      "positive_class_weight": 1.55,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 160,
-      "dropout": 0.13,
-      "lr": 0.000574,
-      "batch_size": 19,
-      "positive_class_weight": 1.07,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 26,
-      "hidden_dim": 192,
-      "dropout": 0.07,
-      "lr": 0.000976,
-      "batch_size": 21,
-      "positive_class_weight": 1.63,
-      "scheduler_factor": 0.35
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 224,
-      "dropout": 0.15,
-      "lr": 0.000652,
-      "batch_size": 16,
-      "positive_class_weight": 1.49,
-      "scheduler_factor": 0.25
-    },
-    {
       "lookback_days": 25,
-      "hidden_dim": 224,
-      "dropout": 0.07,
-      "lr": 0.000699,
-      "batch_size": 18,
-      "positive_class_weight": 1.09,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 16,
-      "hidden_dim": 224,
-      "dropout": 0.19,
-      "lr": 0.000234,
-      "batch_size": 19,
-      "positive_class_weight": 1.6,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 128,
-      "dropout": 0.17,
-      "lr": 0.000527,
-      "batch_size": 14,
-      "positive_class_weight": 1.57,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 160,
-      "dropout": 0.17,
-      "lr": 0.000464,
-      "batch_size": 21,
-      "positive_class_weight": 1.29,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 128,
-      "dropout": 0.05,
-      "lr": 0.000325,
-      "batch_size": 20,
-      "positive_class_weight": 1.45,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 28,
-      "hidden_dim": 224,
-      "dropout": 0.08,
-      "lr": 0.000367,
-      "batch_size": 8,
-      "positive_class_weight": 1.28,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 64,
-      "dropout": 0.17,
+      "hidden_dim": 192,
+      "dropout": 0.24,
       "lr": 0.000978,
       "batch_size": 32,
-      "positive_class_weight": 1.24,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 224,
-      "dropout": 0.14,
-      "lr": 0.000666,
-      "batch_size": 32,
-      "positive_class_weight": 1.15,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 128,
-      "dropout": 0.23,
-      "lr": 0.000456,
-      "batch_size": 20,
-      "positive_class_weight": 1.11,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 128,
-      "dropout": 0.13,
-      "lr": 0.000237,
-      "batch_size": 24,
-      "positive_class_weight": 1.18,
+      "positive_class_weight": 1.03,
       "scheduler_factor": 0.1
     },
     {
       "lookback_days": 14,
-      "hidden_dim": 256,
-      "dropout": 0.07,
-      "lr": 0.000473,
-      "batch_size": 8,
-      "positive_class_weight": 1.89,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 160,
-      "dropout": 0.12,
-      "lr": 0.000568,
-      "batch_size": 12,
-      "positive_class_weight": 1.09,
-      "scheduler_factor": 0.4
-    },
-    {
-      "lookback_days": 15,
-      "hidden_dim": 256,
-      "dropout": 0.2,
-      "lr": 0.000401,
-      "batch_size": 16,
-      "positive_class_weight": 1.38,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 160,
-      "dropout": 0.18,
-      "lr": 0.000501,
-      "batch_size": 16,
-      "positive_class_weight": 1.99,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 64,
-      "dropout": 0.05,
-      "lr": 0.000287,
-      "batch_size": 32,
-      "positive_class_weight": 1.25,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 128,
-      "dropout": 0.07,
-      "lr": 0.000732,
-      "batch_size": 8,
-      "positive_class_weight": 1.08,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 28,
       "hidden_dim": 192,
-      "dropout": 0.25,
-      "lr": 0.00024,
-      "batch_size": 12,
-      "positive_class_weight": 1.58,
+      "dropout": 0.21,
+      "lr": 0.000602,
+      "batch_size": 24,
+      "positive_class_weight": 1.13,
       "scheduler_factor": 0.2
     },
     {
-      "lookback_days": 17,
-      "hidden_dim": 256,
-      "dropout": 0.21,
-      "lr": 0.000303,
-      "batch_size": 32,
-      "positive_class_weight": 1.67,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 15,
-      "hidden_dim": 256,
-      "dropout": 0.16,
-      "lr": 0.000431,
-      "batch_size": 24,
+      "lookback_days": 25,
+      "hidden_dim": 128,
+      "dropout": 0.24,
+      "lr": 0.000532,
+      "batch_size": 12,
       "positive_class_weight": 1.77,
-      "scheduler_factor": 0.4
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 224,
-      "dropout": 0.19,
-      "lr": 0.000276,
-      "batch_size": 20,
-      "positive_class_weight": 1.24,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 224,
-      "dropout": 0.11,
-      "lr": 0.00051,
-      "batch_size": 16,
-      "positive_class_weight": 1.93,
       "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 24,
-      "hidden_dim": 128,
-      "dropout": 0.06,
-      "lr": 0.000344,
-      "batch_size": 12,
-      "positive_class_weight": 1.55,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 25,
-      "hidden_dim": 96,
-      "dropout": 0.11,
-      "lr": 0.000736,
-      "batch_size": 8,
-      "positive_class_weight": 1.14,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 14,
-      "hidden_dim": 64,
-      "dropout": 0.17,
-      "lr": 0.000427,
-      "batch_size": 16,
-      "positive_class_weight": 1.35,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 18,
-      "hidden_dim": 224,
-      "dropout": 0.2,
-      "lr": 0.000386,
-      "batch_size": 24,
-      "positive_class_weight": 1.73,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 15,
-      "hidden_dim": 160,
-      "dropout": 0.13,
-      "lr": 0.000888,
-      "batch_size": 32,
-      "positive_class_weight": 1.05,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 128,
-      "dropout": 0.21,
-      "lr": 0.000277,
-      "batch_size": 32,
-      "positive_class_weight": 1.83,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 18,
-      "hidden_dim": 128,
-      "dropout": 0.18,
-      "lr": 0.000464,
-      "batch_size": 20,
-      "positive_class_weight": 1.32,
-      "scheduler_factor": 0.15
     },
     {
       "lookback_days": 22,
-      "hidden_dim": 96,
-      "dropout": 0.21,
+      "hidden_dim": 224,
+      "dropout": 0.05,
       "lr": 0.000405,
-      "batch_size": 32,
-      "positive_class_weight": 1.9,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 64,
-      "dropout": 0.2,
-      "lr": 0.000449,
-      "batch_size": 8,
-      "positive_class_weight": 1.36,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 192,
-      "dropout": 0.23,
-      "lr": 0.000546,
-      "batch_size": 16,
-      "positive_class_weight": 1.43,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 128,
-      "dropout": 0.12,
-      "lr": 0.00025,
-      "batch_size": 24,
-      "positive_class_weight": 1.5,
-      "scheduler_factor": 0.4
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 128,
-      "dropout": 0.21,
-      "lr": 0.000255,
-      "batch_size": 8,
-      "positive_class_weight": 1.71,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 64,
-      "dropout": 0.06,
-      "lr": 0.0005,
       "batch_size": 12,
-      "positive_class_weight": 1.49,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 14,
-      "hidden_dim": 224,
-      "dropout": 0.21,
-      "lr": 0.000239,
-      "batch_size": 20,
-      "positive_class_weight": 1.46,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 256,
-      "dropout": 0.21,
-      "lr": 0.000255,
-      "batch_size": 20,
-      "positive_class_weight": 1.72,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 24,
-      "hidden_dim": 256,
-      "dropout": 0.17,
-      "lr": 0.000497,
-      "batch_size": 12,
-      "positive_class_weight": 1.25,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 17,
-      "hidden_dim": 128,
-      "dropout": 0.24,
-      "lr": 0.000347,
-      "batch_size": 32,
-      "positive_class_weight": 1.4,
-      "scheduler_factor": 0.15
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 128,
-      "dropout": 0.08,
-      "lr": 0.000514,
-      "batch_size": 32,
-      "positive_class_weight": 1.1,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 28,
-      "hidden_dim": 160,
-      "dropout": 0.17,
-      "lr": 0.000236,
-      "batch_size": 20,
-      "positive_class_weight": 1.79,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 256,
-      "dropout": 0.08,
-      "lr": 0.000506,
-      "batch_size": 12,
-      "positive_class_weight": 1.07,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 26,
-      "hidden_dim": 224,
-      "dropout": 0.24,
-      "lr": 0.000887,
-      "batch_size": 8,
-      "positive_class_weight": 1.11,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 224,
-      "dropout": 0.09,
-      "lr": 0.00077,
-      "batch_size": 8,
-      "positive_class_weight": 1.87,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 256,
-      "dropout": 0.13,
-      "lr": 0.000218,
-      "batch_size": 8,
-      "positive_class_weight": 1.21,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 18,
-      "hidden_dim": 96,
-      "dropout": 0.12,
-      "lr": 0.00038,
-      "batch_size": 8,
-      "positive_class_weight": 1.86,
-      "scheduler_factor": 0.4
-    },
-    {
-      "lookback_days": 15,
-      "hidden_dim": 256,
-      "dropout": 0.12,
-      "lr": 0.000655,
-      "batch_size": 8,
-      "positive_class_weight": 1.59,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 25,
-      "hidden_dim": 128,
-      "dropout": 0.08,
-      "lr": 0.000266,
-      "batch_size": 20,
-      "positive_class_weight": 1.42,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 14,
-      "hidden_dim": 192,
-      "dropout": 0.17,
-      "lr": 0.000553,
-      "batch_size": 20,
-      "positive_class_weight": 1.21,
-      "scheduler_factor": 0.1
-    },
-    {
-      "lookback_days": 20,
-      "hidden_dim": 64,
-      "dropout": 0.24,
-      "lr": 0.000254,
-      "batch_size": 32,
-      "positive_class_weight": 1.86,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 64,
-      "dropout": 0.11,
-      "lr": 0.000329,
-      "batch_size": 32,
-      "positive_class_weight": 1.75,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 160,
-      "dropout": 0.1,
-      "lr": 0.000107,
-      "batch_size": 10,
-      "positive_class_weight": 1.7,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 128,
-      "dropout": 0.14,
-      "lr": 0.000191,
-      "batch_size": 10,
-      "positive_class_weight": 1.52,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 15,
-      "hidden_dim": 96,
-      "dropout": 0.09,
-      "lr": 0.000662,
-      "batch_size": 24,
-      "positive_class_weight": 1.53,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 19,
-      "hidden_dim": 160,
-      "dropout": 0.15,
-      "lr": 0.000205,
-      "batch_size": 8,
-      "positive_class_weight": 1.22,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 26,
-      "hidden_dim": 192,
-      "dropout": 0.23,
-      "lr": 0.000822,
-      "batch_size": 24,
-      "positive_class_weight": 1.29,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 160,
-      "dropout": 0.11,
-      "lr": 0.000214,
-      "batch_size": 12,
-      "positive_class_weight": 1.59,
-      "scheduler_factor": 0.25
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 256,
-      "dropout": 0.2,
-      "lr": 0.000321,
-      "batch_size": 12,
-      "positive_class_weight": 1.33,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 22,
-      "hidden_dim": 128,
-      "dropout": 0.12,
-      "lr": 0.000822,
-      "batch_size": 32,
-      "positive_class_weight": 1.56,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 224,
-      "dropout": 0.12,
-      "lr": 0.000205,
-      "batch_size": 8,
-      "positive_class_weight": 1.35,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 23,
-      "hidden_dim": 128,
-      "dropout": 0.29,
-      "lr": 0.000627,
-      "batch_size": 20,
-      "positive_class_weight": 1.7,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 27,
-      "hidden_dim": 224,
-      "dropout": 0.1,
-      "lr": 0.000366,
-      "batch_size": 8,
-      "positive_class_weight": 1.16,
-      "scheduler_factor": 0.3
-    },
-    {
-      "lookback_days": 21,
-      "hidden_dim": 192,
-      "dropout": 0.09,
-      "lr": 0.000444,
-      "batch_size": 16,
       "positive_class_weight": 1.31,
       "scheduler_factor": 0.25
     },
     {
-      "lookback_days": 15,
-      "hidden_dim": 96,
-      "dropout": 0.08,
-      "lr": 0.000958,
-      "batch_size": 32,
-      "positive_class_weight": 1.47,
-      "scheduler_factor": 0.2
-    },
-    {
-      "lookback_days": 27,
+      "lookback_days": 28,
       "hidden_dim": 224,
-      "dropout": 0.13,
-      "lr": 0.000308,
+      "dropout": 0.12,
+      "lr": 0.000319,
       "batch_size": 8,
       "positive_class_weight": 1.16,
       "scheduler_factor": 0.3
     },
     {
+      "lookback_days": 20,
+      "hidden_dim": 128,
+      "dropout": 0.15,
+      "lr": 0.000194,
+      "batch_size": 12,
+      "positive_class_weight": 1.28,
+      "scheduler_factor": 0.25
+    },
+    {
+      "lookback_days": 26,
+      "hidden_dim": 128,
+      "dropout": 0.27,
+      "lr": 0.000514,
+      "batch_size": 12,
+      "positive_class_weight": 2.0,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 26,
+      "hidden_dim": 96,
+      "dropout": 0.27,
+      "lr": 0.000603,
+      "batch_size": 20,
+      "positive_class_weight": 1.7,
+      "scheduler_factor": 0.3
+    },
+    {
+      "lookback_days": 21,
+      "hidden_dim": 192,
+      "dropout": 0.06,
+      "lr": 0.000455,
+      "batch_size": 16,
+      "positive_class_weight": 1.09,
+      "scheduler_factor": 0.25
+    },
+    {
       "lookback_days": 15,
       "hidden_dim": 96,
-      "dropout": 0.11,
-      "lr": 0.000994,
+      "dropout": 0.07,
+      "lr": 0.000609,
       "batch_size": 32,
-      "positive_class_weight": 1.76,
+      "positive_class_weight": 1.61,
       "scheduler_factor": 0.2
+    },
+    {
+      "lookback_days": 23,
+      "hidden_dim": 224,
+      "dropout": 0.07,
+      "lr": 0.000563,
+      "batch_size": 16,
+      "positive_class_weight": 1.22,
+      "scheduler_factor": 0.25
     }
   ]
 }

@@ -6,6 +6,36 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
+
+def pick_metrics(report):
+    """Pick metrics from report structure, preferring JellyfishNet when available."""
+    if isinstance(report.get('metrics'), dict) and report.get('metrics'):
+        return report['metrics'], report.get('model_name', 'unknown')
+
+    results = report.get('results', {})
+    if not isinstance(results, dict) or not results:
+        return {}, 'unknown'
+
+    if 'JellyfishNet' in results and isinstance(results['JellyfishNet'], dict):
+        return results['JellyfishNet'], 'JellyfishNet'
+
+    if 'GRU' in results and isinstance(results['GRU'], dict):
+        return results['GRU'], 'GRU'
+
+    best_model = None
+    best_metrics = {}
+    best_f1 = float('-inf')
+    for model_name, metrics in results.items():
+        if not isinstance(metrics, dict):
+            continue
+        f1 = float(metrics.get('f1', 0.0) or 0.0)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_model = model_name
+            best_metrics = metrics
+
+    return best_metrics, (best_model or 'unknown')
+
 def main():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     run_dir = Path(f'reports/smart_tuning_{timestamp}')
@@ -75,15 +105,17 @@ All runs: integrated data + live XML
                 if result.returncode == 0 and report_file.exists():
                     with open(report_file) as f:
                         report = json.load(f)
-                    metrics = report.get('metrics', {})
+                    metrics, selected_model = pick_metrics(report)
                     result_entry = {
                         'run': run_name,
                         'report_path': str(report_file),
                         'config': config,
+                        'selected_model': selected_model,
                         'metrics': metrics,
                     }
                     results.append(result_entry)
-                    msg2 = (f"   ✓ recall={metrics.get('recall', 0):.4f} "
+                    msg2 = (f"   ✓ model={selected_model} "
+                           f"recall={metrics.get('recall', 0):.4f} "
                            f"precision={metrics.get('precision', 0):.4f} "
                            f"f1={metrics.get('f1', 0):.4f} "
                            f"auc={metrics.get('auc', 0):.4f}")

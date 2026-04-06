@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 import json
+import argparse
 import numpy as np
 from pathlib import Path
 from datetime import datetime
 
 np.random.seed(42)
 
-# 150 intelligently sampled configs
+# Configurable number of intelligently sampled configs
+parser = argparse.ArgumentParser(description='Generate smart hyperparameter configurations.')
+parser.add_argument('--n-configs', type=int, default=90, help='Number of configs to generate (default: 90)')
+args = parser.parse_args()
+n_configs = max(12, args.n_configs)
+
 configs = []
 
 # 60% high-confidence region (around best run: lb=21, hd=128, do=0.15, lr=0.0005, bs=16, pw=1.4, sf=0.3)
-for i in range(90):
+hc_count = int(round(n_configs * 0.60))
+for i in range(hc_count):
     c = {
         'lookback_days': max(14, min(28, int(np.random.normal(22, 3)))),
         'hidden_dim': max(64, min(256, int(np.random.choice([128, 160, 192, 224])))),
@@ -23,7 +30,8 @@ for i in range(90):
     configs.append(c)
 
 # 30% exploration region
-for i in range(45):
+exp_count = int(round(n_configs * 0.30))
+for i in range(exp_count):
     c = {
         'lookback_days': np.random.randint(14, 29),
         'hidden_dim': int(np.random.choice([64, 96, 128, 160, 192, 224, 256])),
@@ -36,7 +44,8 @@ for i in range(45):
     configs.append(c)
 
 # 10% edge probing
-for i in range(15):
+edge_count = max(0, n_configs - len(configs))
+for i in range(edge_count):
     choice = np.random.choice(['low_lb_small_hd', 'high_lb_large_hd', 'very_low_lr', 'high_lr', 'high_do', 'low_do'])
     if choice == 'low_lb_small_hd':
         c = {
