@@ -12,3 +12,12 @@ All runs: integrated data + live XML
 
 
 [  1/90] st001: lb=23 hd=192 do=0.12 lr=0.000694 bs=21 pw=1.77
+   ✓ model=JellyfishNet recall=0.9720 precision=0.3299 f1=0.4926 auc=0.7108
+
+[  2/90] st002: lb=21 hd=128 do=0.09 lr=0.001000 bs=17 pw=1.65
+   ✓ model=JellyfishNet recall=0.9544 precision=0.3753 f1=0.5387 auc=0.7096
+
+[  3/90] st003: lb=20 hd=128 do=0.11 lr=0.001000 bs=23 pw=1.81
+   ✓ model=JellyfishNet recall=0.9597 precision=0.3532 f1=0.5164 auc=0.7049
+
+[  4/90] st004: lb=24 hd=160 do=0.07 lr=0.000420 bs=14 pw=1.47
