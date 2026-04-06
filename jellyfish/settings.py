@@ -4,7 +4,11 @@ Edit values here to change project-wide defaults in one place.
 """
 
 DEFAULT_LOOKBACK_DAYS = 14
-DEFAULT_WEATHER_CSV_PATH = 'data/IMS/data_202603142120.csv'
+# Weather CSV path options:
+#   - None: auto-discover all IMS CSV files in data/IMS/ and consolidate them
+#   - "path/to/file.csv": use single IMS CSV file
+#   - ["file1.csv", "file2.csv"]: consolidate these specific CSV files
+DEFAULT_WEATHER_CSV_PATH = None  # Auto-discover all IMS CSV files
 DEFAULT_USE_INTEGRATED_DATA = True
 DEFAULT_INCLUDE_LIVE_XML = True
 

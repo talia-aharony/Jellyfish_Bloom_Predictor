@@ -1,0 +1,116 @@
+{
+  "runs": [
+    {
+      "name": "hp07b_jelly_lb21_nonint_hd128_do010_lr5e4_bs16",
+      "config": {
+        "name": "hp07b_jelly_lb21_nonint_hd128_do010_lr5e4_bs16",
+        "model": "JellyfishNet",
+        "use_integrated": false,
+        "lookback_days": 21,
+        "hidden_dim": 128,
+        "dropout": 0.1,
+        "lr": 0.0005,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/hp_search_8ep_20260406_more/hp07b_jelly_lb21_nonint_hd128_do010_lr5e4_bs16/jellyfishnet_model.pth",
+      "training_report": "reports/hp_search_8ep_20260406_more/hp07b_jelly_lb21_nonint_hd128_do010_lr5e4_bs16.json",
+      "best_under_recall_ge_0_95": {
+        "threshold": 0.125,
+        "recall": 0.9509345794392523,
+        "precision": 0.3725400457665904,
+        "f1": 0.5353502137454784,
+        "accuracy": 0.4379474940334129,
+        "tp": 814,
+        "fp": 1371,
+        "fn": 42,
+        "tn": 287
+      }
+    },
+    {
+      "name": "hp08_gru_lb21_int_do020_lr5e4_bs16",
+      "config": {
+        "name": "hp08_gru_lb21_int_do020_lr5e4_bs16",
+        "model": "GRU",
+        "use_integrated": true,
+        "lookback_days": 21,
+        "hidden_dim": null,
+        "dropout": 0.2,
+        "lr": 0.0005,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/hp_search_8ep_20260406_more/hp08_gru_lb21_int_do020_lr5e4_bs16/gru_model.pth",
+      "training_report": "reports/hp_search_8ep_20260406_more/hp08_gru_lb21_int_do020_lr5e4_bs16.json",
+      "best_under_recall_ge_0_95": {
+        "threshold": 0.13,
+        "recall": 0.9509345794392523,
+        "precision": 0.3786046511627907,
+        "f1": 0.541583499667332,
+        "accuracy": 0.4518695306284805,
+        "tp": 814,
+        "fp": 1336,
+        "fn": 42,
+        "tn": 322
+      }
+    },
+    {
+      "name": "hp09_gru_lb21_nonint_do020_lr5e4_bs16",
+      "config": {
+        "name": "hp09_gru_lb21_nonint_do020_lr5e4_bs16",
+        "model": "GRU",
+        "use_integrated": false,
+        "lookback_days": 21,
+        "hidden_dim": null,
+        "dropout": 0.2,
+        "lr": 0.0005,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/hp_search_8ep_20260406_more/hp09_gru_lb21_nonint_do020_lr5e4_bs16/gru_model.pth",
+      "training_report": "reports/hp_search_8ep_20260406_more/hp09_gru_lb21_nonint_do020_lr5e4_bs16.json",
+      "best_under_recall_ge_0_95": {
+        "threshold": 0.12,
+        "recall": 0.955607476635514,
+        "precision": 0.36896707262065853,
+        "f1": 0.5323787829482589,
+        "accuracy": 0.42840095465393796,
+        "tp": 818,
+        "fp": 1399,
+        "fn": 38,
+        "tn": 259
+      }
+    },
+    {
+      "name": "hp10_jelly_lb21_int_hd192_do005_lr4e4_bs8",
+      "config": {
+        "name": "hp10_jelly_lb21_int_hd192_do005_lr4e4_bs8",
+        "model": "JellyfishNet",
+        "use_integrated": true,
+        "lookback_days": 21,
+        "hidden_dim": 192,
+        "dropout": 0.05,
+        "lr": 0.0004,
+        "batch_size": 8,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/hp_search_8ep_20260406_more/hp10_jelly_lb21_int_hd192_do005_lr4e4_bs8/jellyfishnet_model.pth",
+      "training_report": "reports/hp_search_8ep_20260406_more/hp10_jelly_lb21_int_hd192_do005_lr4e4_bs8.json",
+      "best_under_recall_ge_0_95": {
+        "threshold": 0.105,
+        "recall": 0.955607476635514,
+        "precision": 0.36880072137060416,
+        "f1": 0.5322055953155498,
+        "accuracy": 0.42800318217979316,
+        "tp": 818,
+        "fp": 1400,
+        "fn": 38,
+        "tn": 258
+      }
+    }
+  ]
+}

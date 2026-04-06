@@ -1,0 +1,248 @@
+{
+  "objective_order": [
+    "recall",
+    "precision",
+    "f1",
+    "accuracy"
+  ],
+  "constraint": "recall >= 0.95",
+  "epochs": 5,
+  "runs": [
+    {
+      "name": "j5_hp01_int_lb14_hd128_do020_lr8e4_bs32",
+      "config": {
+        "name": "j5_hp01_int_lb14_hd128_do020_lr8e4_bs32",
+        "use_integrated": true,
+        "lookback_days": 14,
+        "hidden_dim": 128,
+        "dropout": 0.2,
+        "lr": 0.0008,
+        "batch_size": 32,
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp01_int_lb14_hd128_do020_lr8e4_bs32/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp01_int_lb14_hd128_do020_lr8e4_bs32.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.11499999999999999,
+        "recall": 0.9635922330097088,
+        "precision": 0.3423889607589478,
+        "f1": 0.505249761374483,
+        "accuracy": 0.3865877712031558,
+        "tp": 794,
+        "fp": 1525,
+        "fn": 30,
+        "tn": 186
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp02_int_lb14_hd256_do015_lr8e4_bs24",
+      "config": {
+        "name": "j5_hp02_int_lb14_hd256_do015_lr8e4_bs24",
+        "use_integrated": true,
+        "lookback_days": 14,
+        "hidden_dim": 256,
+        "dropout": 0.15,
+        "lr": 0.0008,
+        "batch_size": 24,
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp02_int_lb14_hd256_do015_lr8e4_bs24/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp02_int_lb14_hd256_do015_lr8e4_bs24.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.14500000000000002,
+        "recall": 0.9563106796116505,
+        "precision": 0.3532048408785298,
+        "f1": 0.5158756137479542,
+        "accuracy": 0.4165680473372781,
+        "tp": 788,
+        "fp": 1443,
+        "fn": 36,
+        "tn": 268
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp03_int_lb21_hd128_do010_lr5e4_bs16",
+      "config": {
+        "name": "j5_hp03_int_lb21_hd128_do010_lr5e4_bs16",
+        "use_integrated": true,
+        "lookback_days": 21,
+        "hidden_dim": 128,
+        "dropout": 0.1,
+        "lr": 0.0005,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp03_int_lb21_hd128_do010_lr5e4_bs16/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp03_int_lb21_hd128_do010_lr5e4_bs16.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.15000000000000002,
+        "recall": 0.9544392523364486,
+        "precision": 0.3740842490842491,
+        "f1": 0.5375,
+        "accuracy": 0.4407319013524264,
+        "tp": 817,
+        "fp": 1367,
+        "fn": 39,
+        "tn": 291
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp04_int_lb21_hd192_do010_lr6e4_bs16",
+      "config": {
+        "name": "j5_hp04_int_lb21_hd192_do010_lr6e4_bs16",
+        "use_integrated": true,
+        "lookback_days": 21,
+        "hidden_dim": 192,
+        "dropout": 0.1,
+        "lr": 0.0006,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp04_int_lb21_hd192_do010_lr6e4_bs16/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp04_int_lb21_hd192_do010_lr6e4_bs16.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.135,
+        "recall": 0.9567757009345794,
+        "precision": 0.3674293405114401,
+        "f1": 0.5309562398703404,
+        "accuracy": 0.42442322991249004,
+        "tp": 819,
+        "fp": 1410,
+        "fn": 37,
+        "tn": 248
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp05_int_lb28_hd256_do020_lr3e4_bs16",
+      "config": {
+        "name": "j5_hp05_int_lb28_hd256_do020_lr3e4_bs16",
+        "use_integrated": true,
+        "lookback_days": 28,
+        "hidden_dim": 256,
+        "dropout": 0.2,
+        "lr": 0.0003,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp05_int_lb28_hd256_do020_lr3e4_bs16/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp05_int_lb28_hd256_do020_lr3e4_bs16.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.08,
+        "recall": 0.9655172413793104,
+        "precision": 0.33793103448275863,
+        "f1": 0.5006385696040868,
+        "accuracy": 0.37264340152426795,
+        "tp": 784,
+        "fp": 1536,
+        "fn": 28,
+        "tn": 145
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp06_nonint_lb21_hd128_do010_lr5e4_bs16",
+      "config": {
+        "name": "j5_hp06_nonint_lb21_hd128_do010_lr5e4_bs16",
+        "use_integrated": false,
+        "lookback_days": 21,
+        "hidden_dim": 128,
+        "dropout": 0.1,
+        "lr": 0.0005,
+        "batch_size": 16,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp06_nonint_lb21_hd128_do010_lr5e4_bs16/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp06_nonint_lb21_hd128_do010_lr5e4_bs16.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.125,
+        "recall": 0.9532710280373832,
+        "precision": 0.36608344549125166,
+        "f1": 0.5290113452188007,
+        "accuracy": 0.4220365950676213,
+        "tp": 816,
+        "fp": 1413,
+        "fn": 40,
+        "tn": 245
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp07_nonint_lb28_hd256_do005_lr3e4_bs8",
+      "config": {
+        "name": "j5_hp07_nonint_lb28_hd256_do005_lr3e4_bs8",
+        "use_integrated": false,
+        "lookback_days": 28,
+        "hidden_dim": 256,
+        "dropout": 0.05,
+        "lr": 0.0003,
+        "batch_size": 8,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp07_nonint_lb28_hd256_do005_lr3e4_bs8/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp07_nonint_lb28_hd256_do005_lr3e4_bs8.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.12,
+        "recall": 0.9544334975369458,
+        "precision": 0.3645343367826905,
+        "f1": 0.527569775357386,
+        "accuracy": 0.4432410750100281,
+        "tp": 775,
+        "fp": 1351,
+        "fn": 37,
+        "tn": 330
+      },
+      "recall_at_threshold_0_05": 1.0
+    },
+    {
+      "name": "j5_hp08_int_lb28_hd384_do005_lr3e4_bs8",
+      "config": {
+        "name": "j5_hp08_int_lb28_hd384_do005_lr3e4_bs8",
+        "use_integrated": true,
+        "lookback_days": 28,
+        "hidden_dim": 384,
+        "dropout": 0.05,
+        "lr": 0.0003,
+        "batch_size": 8,
+        "scheduler_factor": 0.3,
+        "scheduler_patience": 1
+      },
+      "checkpoint": "models/jellynet_5ep_tuning_20260406/j5_hp08_int_lb28_hd384_do005_lr3e4_bs8/jellyfishnet_model.pth",
+      "report_path": "reports/jellynet_5ep_tuning_20260406/j5_hp08_int_lb28_hd384_do005_lr3e4_bs8.json",
+      "best_under_recall_ge_95": {
+        "threshold": 0.14500000000000002,
+        "recall": 0.9519704433497537,
+        "precision": 0.3489841986455982,
+        "f1": 0.5107367030062768,
+        "accuracy": 0.40593662254312074,
+        "tp": 773,
+        "fp": 1442,
+        "fn": 39,
+        "tn": 239
+      },
+      "recall_at_threshold_0_05": 1.0
+    }
+  ],
+  "selected_best": "j5_hp05_int_lb28_hd256_do020_lr3e4_bs16",
+  "selected_metrics": {
+    "threshold": 0.08,
+    "recall": 0.9655172413793104,
+    "precision": 0.33793103448275863,
+    "f1": 0.5006385696040868,
+    "accuracy": 0.37264340152426795,
+    "tp": 784,
+    "fp": 1536,
+    "fn": 28,
+    "tn": 145
+  }
+}

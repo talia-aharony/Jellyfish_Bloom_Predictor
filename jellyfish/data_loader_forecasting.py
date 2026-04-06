@@ -68,6 +68,13 @@ SEA_TO_ALERT_REGION = {
     "southern_coast": "south",
 }
 
+# Region latitude boundaries for dynamic mapping (based on reference coords and Israeli coast geography)
+REGION_LATITUDE_BOUNDARIES = {
+    "northern_coast": (32.80, 90.0),      # Northern: 32.80°N and above (Haifa to Nahariya area)
+    "central_coast": (31.77, 32.80),      # Central: 31.77°N to 32.80°N (Ashdod to Haifa area)
+    "southern_coast": (-90.0, 31.77),     # Southern: below 31.77°N (Ashkelon, Gaza area)
+}
+
 
 def _haversine_km(lat1, lon1, lat2, lon2):
     if any(pd.isna(v) for v in [lat1, lon1, lat2, lon2]):
@@ -82,6 +89,35 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     a = np.sin(dphi / 2.0) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2.0) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return r * c
+
+
+def get_region_from_latitude(latitude):
+    """
+    Determine sea region (northern/central/southern) from latitude.
+    
+    Uses latitude boundaries based on Israeli Mediterranean coast geography.
+    
+    Args:
+        latitude: Beach latitude
+    
+    Returns:
+        Region name: "northern_coast", "central_coast", or "southern_coast"
+    """
+    if pd.isna(latitude):
+        return "central_coast"  # Default fallback
+    
+    lat = float(latitude)
+    for region, (lat_min, lat_max) in REGION_LATITUDE_BOUNDARIES.items():
+        if lat_min <= lat <= lat_max:
+            return region
+    
+    # Fallback: if outside defined boundaries, assign to nearest
+    if lat > 32.80:
+        return "northern_coast"
+    elif lat < 31.77:
+        return "southern_coast"
+    else:
+        return "central_coast"
 
 
 def build_beach_live_source_map(daily_citizen, available_city_sources=None):
@@ -215,18 +251,74 @@ def map_live_rss_features_to_beaches(live_daily, daily_citizen):
     return mapped_live
 
 
-def load_live_ims_xml_features(region="central_coast"):
-    """Load live IMS XML forecasts and aggregate them into daily features.
-
+def load_live_ims_xml_features(region=None, beach_locations_df=None):
+    """Load live IMS XML forecasts aggregated by region.
+    
+    Args:
+        region: Specific region to load (None = auto-detect from beach_locations_df, 
+                "all" = load all regions)
+        beach_locations_df: DataFrame with beach locations to auto-detect regions
+    
     Returns:
         DataFrame with one row per date and globally aggregated weather/sea/radiation
         features from IMS XML feeds.
     """
     print("\n🌐 Loading live IMS RSS feeds...")
+    
+    # Determine which regions to fetch
+    regions_to_fetch = set()
+    if region == "all":
+        regions_to_fetch = set(REGION_LATITUDE_BOUNDARIES.keys())
+        print(f"  Fetching features for all regions: {regions_to_fetch}")
+    elif region is not None:
+        regions_to_fetch.add(region)
+        print(f"  Fetching features for specified region: {region}")
+    elif beach_locations_df is not None and not beach_locations_df.empty:
+        # Auto-detect regions from beach locations
+        required_cols = {'decimalLatitude', 'beach_id'}
+        if required_cols.issubset(beach_locations_df.columns):
+            unique_beaches = beach_locations_df[['beach_id', 'decimalLatitude']].drop_duplicates()
+            for _, row in unique_beaches.iterrows():
+                region_for_beach = get_region_from_latitude(row['decimalLatitude'])
+                regions_to_fetch.add(region_for_beach)
+            print(f"  Auto-detected regions from beach locations: {regions_to_fetch}")
+        else:
+            print(f"  ⚠️  beach_locations_df missing required columns, using default region")
+            regions_to_fetch.add("central_coast")
+    else:
+        # Default fallback
+        regions_to_fetch.add("central_coast")
+        print(f"  Using default region: central_coast")
+    
+    # Fetch data for each region and consolidate
+    all_frames = []
+    for region_name in sorted(regions_to_fetch):
+        print(f"  Fetching {region_name}...")
+        try:
+            fetcher = IMSWeatherFetcher(region=region_name)
+            payload = fetcher.fetch_enriched_forecast()
+            region_daily = _parse_live_ims_payload(payload)
+            all_frames.append(region_daily)
+        except Exception as e:
+            print(f"    ⚠️  Failed to fetch {region_name}: {e}")
+            continue
+    
+    if not all_frames:
+        print("⚠️  Live RSS feeds unavailable; continuing without live RSS features")
+        return pd.DataFrame(columns=["date"])
+    
+    # Merge all region data on date
+    live_daily = all_frames[0]
+    for frame in all_frames[1:]:
+        if not frame.empty and not live_daily.empty and 'date' in frame.columns and 'date' in live_daily.columns:
+            live_daily = live_daily.merge(frame, on="date", how="outer")
+    
+    print(f"✓ Live RSS daily features loaded: {len(live_daily)} date rows from {len(regions_to_fetch)} region(s)")
+    return live_daily
 
-    fetcher = IMSWeatherFetcher(region=region)
-    payload = fetcher.fetch_enriched_forecast()
 
+def _parse_live_ims_payload(payload):
+    """Parse IMS XML payload into daily features (helper for load_live_ims_xml_features)."""
     city_rows = []
     city_payload = payload.get("city_rss", {}) if payload else {}
     for city_name, city_data in city_payload.items():
@@ -321,7 +413,8 @@ def load_live_ims_xml_features(region="central_coast"):
     if not alert_daily.empty:
         value_cols = [col for col in alert_daily.columns if col != "date"]
         alert_daily = alert_daily.groupby("date", as_index=False)[value_cols].mean(numeric_only=True)
-
+    
+    # Combine all frames
     daily_frames = []
     for frame in [city_daily, sea_daily, rad_daily, alert_daily]:
         if frame is not None and not frame.empty and "date" in frame.columns:
@@ -329,17 +422,16 @@ def load_live_ims_xml_features(region="central_coast"):
             daily_frames.append(frame)
 
     if not daily_frames:
-        print("⚠️  Live RSS feeds unavailable or empty; continuing without live RSS features")
         return pd.DataFrame(columns=["date"])
 
     live_daily = daily_frames[0]
     for frame in daily_frames[1:]:
         live_daily = live_daily.merge(frame, on="date", how="outer")
 
-    print(f"✓ Live RSS daily features loaded: {len(live_daily)} date rows")
     return live_daily
 
 
+# Remove the old duplicate code that was here
 def load_all_data():
     """Load all data from data directory"""
     base = "data"
@@ -359,6 +451,92 @@ def load_all_data():
                     datasets[folder][f] = pd.read_csv(full_path, low_memory=False)
 
     return datasets
+
+
+def find_all_ims_csv_files(directory="data/IMS"):
+    """
+    Find all IMS weather CSV files in directory, sorted by filename (newest last).
+    
+    Args:
+        directory: Path to IMS data directory
+    
+    Returns:
+        List of full paths to IMS CSV files, sorted (newest last)
+    """
+    if not os.path.isdir(directory):
+        return []
+    
+    csv_files = [f for f in os.listdir(directory) if f.startswith("data_") and f.endswith(".csv")]
+    csv_files.sort()  # Numeric sort by filename (newer files named later)
+    
+    return [os.path.join(directory, f) for f in csv_files]
+
+
+def load_and_consolidate_ims_weather(weather_csv_path=None):
+    """
+    Load IMS weather data, optionally consolidating multiple CSV files.
+    
+    If weather_csv_path is None, finds all available IMS CSV files and loads them.
+    If weight_csv_path is a single file, loads just that file.
+    If weather_csv_path is a list, consolidates all files in the list.
+    
+    Args:
+        weather_csv_path: Path(s) to IMS weather CSV file(s), or None to auto-discover all
+    
+    Returns:
+        Consolidated weather DataFrame or None if loading fails
+    """
+    files_to_load = []
+    
+    if weather_csv_path is None:
+        # Auto-discover all IMS CSV files
+        files_to_load = find_all_ims_csv_files()
+        if not files_to_load:
+            print("❌ No IMS CSV files found in data/IMS directory")
+            return None
+        print(f"Auto-discovered {len(files_to_load)} IMS CSV file(s):")
+        for f in files_to_load:
+            print(f"  - {os.path.basename(f)}")
+    elif isinstance(weather_csv_path, str):
+        # Single file path
+        if os.path.exists(weather_csv_path):
+            files_to_load = [weather_csv_path]
+        else:
+            print(f"❌ Weather file not found at {weather_csv_path}")
+            return None
+    elif isinstance(weather_csv_path, list):
+        # Multiple file paths
+        files_to_load = weather_csv_path
+    else:
+        print(f"❌ Invalid weather_csv_path type: {type(weather_csv_path)}")
+        return None
+    
+    dfs = []
+    for fpath in files_to_load:
+        df = load_and_parse_ims_weather(fpath)
+        if df is not None:
+            dfs.append(df)
+    
+    if not dfs:
+        print("❌ Failed to load any weather data files")
+        return None
+    
+    if len(dfs) == 1:
+        return dfs[0]
+    
+    # Consolidate multiple files: deduplicate by (station, date, hour)
+    print(f"\nConsolidating {len(dfs)} weather data files...")
+    consolidated = pd.concat(dfs, ignore_index=True)
+    
+    # Remove exact duplicates
+    consol_before = len(consolidated)
+    consolidated = consolidated.drop_duplicates(subset=['station', 'date', 'hour'], keep='first')
+    dupes_removed = consol_before - len(consolidated)
+    if dupes_removed > 0:
+        print(f"  Removed {dupes_removed} duplicate records")
+    
+    print(f"✓ Consolidated: {len(consolidated)} total weather observations")
+    return consolidated
 
 
 def load_and_parse_ims_weather(weather_csv_path):
@@ -864,9 +1042,13 @@ def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1, inc
     Master function to load and integrate all data with SYMMETRIC structure
     
     Args:
-        weather_csv_path: Path to IMS weather CSV
+        weather_csv_path: Path to IMS weather CSV(s). Can be:
+            - None: auto-discover all IMS CSV files in data/IMS/
+            - str: single CSV file path
+            - list: list of CSV file paths to consolidate
         lookback_days: Historical window (default 7 days)
         forecast_days: Forecast horizon (default 1 day)
+        include_live_xml: Whether to include live IMS RSS features (default True)
     
     Returns:
         X: Feature sequences
@@ -886,7 +1068,8 @@ def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1, inc
     daily_citizen = aggregate_citizen_by_beach_date(df_citizen)
     
     # Load and aggregate IMS weather data (SAME STRUCTURE)
-    weather_df = load_and_parse_ims_weather(weather_csv_path)
+    # Now using load_and_consolidate_ims_weather which can handle multiple files
+    weather_df = load_and_consolidate_ims_weather(weather_csv_path)
     
     if weather_df is None:
         print("❌ Failed to load weather data")
@@ -895,7 +1078,11 @@ def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1, inc
     daily_weather = aggregate_ims_by_beach_date(weather_df, beach_station_map, daily_citizen)
 
     if include_live_xml:
-        live_xml_daily = load_live_ims_xml_features(region="central_coast")
+        # Now using dynamic region mapping based on beach locations, NO hardcoded region!
+        live_xml_daily = load_live_ims_xml_features(
+            region=None,  # Auto-detect regions from beach locations
+            beach_locations_df=daily_citizen
+        )
         if not live_xml_daily.empty and 'date' in live_xml_daily.columns:
             live_mapped = map_live_rss_features_to_beaches(live_xml_daily, daily_citizen)
             if not live_mapped.empty:
@@ -932,7 +1119,14 @@ def load_integrated_data(weather_csv_path, lookback_days=7, forecast_days=1, inc
 
 if __name__ == "__main__":
     # Example usage
-    weather_path = "data/IMS/data_202603142120.csv"
+    # Option 1: Auto-discover all IMS CSV files
+    weather_path = None
+    
+    # Option 2: Use a specific CSV file
+    # weather_path = "data/IMS/data_202603142120.csv"
+    
+    # Option 3: Consolidate multiple specific CSV files
+    # weather_path = ["data/IMS/data_202603142120.csv", "data/IMS/data_202604052350.csv"]
     
     results = load_integrated_data(
         weather_csv_path=weather_path,

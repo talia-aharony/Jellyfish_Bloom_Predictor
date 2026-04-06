@@ -1,18 +1,17 @@
 {
-  "timestamp": "2026-04-05T16:51:41",
+  "timestamp": "2026-04-06T04:12:53",
   "config": {
     "lookback_days": 14,
-    "use_integrated_data": false,
-    "weather_csv_path": "data/IMS/data_202603142120.csv",
-    "include_live_xml": true,
-    "batch_size": 32,
+    "use_integrated_data": true,
+    "weather_csv_path": "None",
+    "include_live_xml": false,
+    "batch_size": 64,
     "learning_rate": 0.001,
     "dropout_prob": 0.3,
-    "num_epochs": 100,
+    "num_epochs": 1,
     "patience": 15,
     "hybrid_hidden_dim": 64,
     "model_names": [
-      "GRU",
       "JellyfishNet"
     ],
     "scheduler_factor": 0.5,
@@ -21,46 +20,44 @@
     "threshold_min": 0.1,
     "threshold_max": 0.9,
     "threshold_steps": 81,
-    "threshold_selection_metric": "f1_on_validation",
-    "n_features_per_day": 11
+    "threshold_min_precision": 0.4,
+    "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+    "n_features_per_day": 33
   },
   "results": {
-    "GRU": {
-      "accuracy": 0.5747534516765286,
-      "precision": 0.4152202937249666,
-      "recall": 0.7548543689320388,
-      "f1": 0.5357450473729544,
-      "auc": 0.6736224203185557,
-      "threshold": 0.26,
-      "val_best_f1": 0.566401340594889,
-      "confusion_matrix": [
-        [
-          835,
-          876
-        ],
-        [
-          202,
-          622
-        ]
-      ]
-    },
     "JellyfishNet": {
-      "accuracy": 0.6220907297830375,
-      "precision": 0.44561688311688313,
-      "recall": 0.6662621359223301,
-      "f1": 0.5340466926070039,
-      "auc": 0.672262360057424,
-      "threshold": 0.33999999999999997,
-      "val_best_f1": 0.5786802030456853,
+      "recall": 0.8264563106796117,
+      "precision": 0.37833333333333335,
+      "f1": 0.5190548780487805,
+      "accuracy": 0.5021696252465483,
+      "auc": 0.6547922352794312,
+      "threshold": 0.21000000000000002,
+      "val_best_recall": 0.8739693757361602,
+      "val_best_f1": 0.0,
       "confusion_matrix": [
         [
-          1028,
-          683
+          592,
+          1119
         ],
         [
-          275,
-          549
+          143,
+          681
         ]
+      ],
+      "train_losses": [
+        0.6123407766625688
+      ],
+      "val_losses": [
+        0.5929791152477264
+      ],
+      "train_accs": [
+        0.6747568710359408
+      ],
+      "val_accs": [
+        0.6727200947493092
+      ],
+      "lr_history": [
+        0.001
       ]
     }
   }

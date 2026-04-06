@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-04-06T02:06:50",
+  "config": {
+    "lookback_days": 14,
+    "use_integrated_data": true,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "dropout_prob": 0.25,
+    "num_epochs": 5,
+    "patience": 5,
+    "hybrid_hidden_dim": 128,
+    "model_names": [
+      "JellyfishNet"
+    ],
+    "scheduler_factor": 0.3,
+    "scheduler_patience": 1,
+    "grad_clip_norm": 1.0,
+    "threshold_min": 0.1,
+    "threshold_max": 0.9,
+    "threshold_steps": 81,
+    "threshold_min_precision": 0.4,
+    "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+    "n_features_per_day": 33
+  },
+  "results": {
+    "JellyfishNet": {
+      "recall": 0.8446601941747572,
+      "precision": 0.39057239057239057,
+      "f1": 0.5341519570222563,
+      "accuracy": 0.5211045364891519,
+      "auc": 0.6718821815437517,
+      "threshold": 0.2,
+      "val_best_recall": 0.8680800942285041,
+      "val_best_f1": 0.0,
+      "confusion_matrix": [
+        [
+          625,
+          1086
+        ],
+        [
+          128,
+          696
+        ]
+      ],
+      "train_losses": [
+        0.6028106488086081,
+        0.5917441861855017,
+        0.5873727372369251,
+        0.5825087828410639,
+        0.5745057174482862
+      ],
+      "val_losses": [
+        0.5982647281140089,
+        0.589667521044612,
+        0.591690917685628,
+        0.5913766339421272,
+        0.5826545599848032
+      ],
+      "train_accs": [
+        0.6848202959830867,
+        0.6885412262156448,
+        0.6917547568710359,
+        0.691585623678647,
+        0.6991120507399577
+      ],
+      "val_accs": [
+        0.6683774180813264,
+        0.6758784050532964,
+        0.670746150809317,
+        0.6754836162652981,
+        0.6896960126332412
+      ],
+      "lr_history": [
+        0.001,
+        0.001,
+        0.001,
+        0.0003,
+        0.0003
+      ]
+    }
+  }
+}

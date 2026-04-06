@@ -197,6 +197,7 @@ class Trainer:
         self.val_losses   = []
         self.train_accs   = []
         self.val_accs     = []
+        self.lr_history   = []
 
     def train_epoch(self, loader):
         self.model.train()
@@ -239,11 +240,13 @@ class Trainer:
             self.val_losses.append(vl_loss)
             self.train_accs.append(tr_acc)
             self.val_accs.append(vl_acc)
-            if (epoch + 1) % 20 == 0:
+            current_lr = float(self.optimizer.param_groups[0]["lr"])
+            self.lr_history.append(current_lr)
+            if epochs <= 20 or (epoch + 1) % 20 == 0:
                 print(
                     f"  Epoch {epoch+1:3d}/{epochs}  "
                     f"train_loss={tr_loss:.4f}  val_loss={vl_loss:.4f}  "
-                    f"train_acc={tr_acc:.4f}  val_acc={vl_acc:.4f}"
+                    f"train_acc={tr_acc:.4f}  val_acc={vl_acc:.4f}  lr={current_lr:.6f}"
                 )
             if vl_loss < best_val:
                 best_val, wait = vl_loss, 0
@@ -340,6 +343,11 @@ def save_training_report(results, config, output_path):
                 "val_best_recall":  float(m.get("val_best_recall", 0.0)),
                 "val_best_f1":      float(m.get("val_best_f1", 0.0)),
                 "confusion_matrix": m["confusion_matrix"].tolist(),
+                "train_losses":     [float(v) for v in m.get("train_losses", [])],
+                "val_losses":       [float(v) for v in m.get("val_losses", [])],
+                "train_accs":       [float(v) for v in m.get("train_accs", [])],
+                "val_accs":         [float(v) for v in m.get("val_accs", [])],
+                "lr_history":       [float(v) for v in m.get("lr_history", [])],
             }
             for name, m in results.items()
         },
@@ -502,6 +510,11 @@ def train_all_models(
         thresh, val_recall = trainer.find_best_threshold(val_ld)
         metrics        = trainer.test(te_ld, threshold=thresh)
         metrics["val_best_recall"] = val_recall
+        metrics["train_losses"] = trainer.train_losses
+        metrics["val_losses"] = trainer.val_losses
+        metrics["train_accs"] = trainer.train_accs
+        metrics["val_accs"] = trainer.val_accs
+        metrics["lr_history"] = trainer.lr_history
         elapsed = time.time() - t0
 
         save_path = os.path.join(output_dir, f"{name.lower()}_model.pth")
@@ -667,6 +680,11 @@ def finetune_per_beach(
         metrics        = trainer.test(te_ld, threshold=thresh)
         metrics["val_best_recall"] = val_recall
         metrics["n_samples"]   = n
+        metrics["train_losses"] = trainer.train_losses
+        metrics["val_losses"] = trainer.val_losses
+        metrics["train_accs"] = trainer.train_accs
+        metrics["val_accs"] = trainer.val_accs
+        metrics["lr_history"] = trainer.lr_history
 
         save_path = os.path.join(output_dir, f"beach_{beach_id}_model.pth")
         torch.save(model.state_dict(), save_path)

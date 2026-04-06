@@ -1,0 +1,376 @@
+{
+  "tool": "ai_toolkit_diagnostic_loop_8ep",
+  "created_at": "2026-04-06T02:24:53",
+  "primary_model": "JellyfishNet",
+  "objective": {
+    "primary": "maximize_recall",
+    "secondary": [
+      "maximize_f1",
+      "maximize_precision"
+    ],
+    "constraint": "recall >= 0.95"
+  },
+  "selected_run_under_constraint": "structural_threshold_tuned_8ep",
+  "runs": [
+    {
+      "run_name": "baseline_8ep",
+      "report_path": "reports/diag8_run0_baseline.json",
+      "config": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "data/IMS/data_202603142120.csv",
+        "include_live_xml": true,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "dropout_prob": 0.3,
+        "num_epochs": 8,
+        "patience": 8,
+        "hybrid_hidden_dim": 64,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.5,
+        "scheduler_patience": 5,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 86,
+        "threshold_min_precision": 0.3,
+        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 1.0,
+        "precision": 0.32504930966469425,
+        "f1": 0.490622208990771,
+        "accuracy": 0.32504930966469425,
+        "auc": 0.6805727360936941,
+        "threshold": 0.05,
+        "val_best_recall": 1.0,
+        "recall_delta_vs_baseline_pct_points": 0.0
+      },
+      "curves": {
+        "train_losses": [
+          0.6072722840953517,
+          0.5936703080261075,
+          0.5904602862693168,
+          0.5851717944886233,
+          0.5832945495843888,
+          0.5801653446377935,
+          0.5795276500888773,
+          0.5767839215091757
+        ],
+        "val_losses": [
+          0.59911087192595,
+          0.5948303155601025,
+          0.5858927045017481,
+          0.5828582946211099,
+          0.592156296595931,
+          0.5870582725852728,
+          0.5822846058756113,
+          0.5799216531217098
+        ],
+        "train_accs": [
+          0.6819450317124736,
+          0.6882875264270613,
+          0.6902325581395349,
+          0.693953488372093,
+          0.6921775898520085,
+          0.694968287526427,
+          0.693953488372093,
+          0.6977589852008457
+        ],
+        "val_accs": [
+          0.6774575602052901,
+          0.6683774180813264,
+          0.6786419265692855,
+          0.6873272799052507,
+          0.6762731938412949,
+          0.6873272799052507,
+          0.6802210817212792,
+          0.6944334780892223
+        ],
+        "lr_history": [
+          0.001,
+          0.001,
+          0.001,
+          0.001,
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ]
+      }
+    },
+    {
+      "run_name": "scheduler_8ep",
+      "report_path": "reports/diag8_run1_scheduler.json",
+      "config": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "data/IMS/data_202603142120.csv",
+        "include_live_xml": true,
+        "batch_size": 32,
+        "learning_rate": 0.0012,
+        "dropout_prob": 0.3,
+        "num_epochs": 8,
+        "patience": 8,
+        "hybrid_hidden_dim": 64,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 86,
+        "threshold_min_precision": 0.3,
+        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 1.0,
+        "precision": 0.32504930966469425,
+        "f1": 0.490622208990771,
+        "accuracy": 0.32504930966469425,
+        "auc": 0.6757368086567215,
+        "threshold": 0.05,
+        "val_best_recall": 1.0,
+        "recall_delta_vs_baseline_pct_points": 0.0
+      },
+      "curves": {
+        "train_losses": [
+          0.6101240497988624,
+          0.5935517114561957,
+          0.5873255521864504,
+          0.5841610177948668,
+          0.5844502167927252,
+          0.5794134811775105,
+          0.578577725549002,
+          0.5760638303047901
+        ],
+        "val_losses": [
+          0.5948320243507623,
+          0.5885343156754971,
+          0.5910989489406347,
+          0.5868464231491088,
+          0.5839545618742704,
+          0.5873487547039986,
+          0.5838385913521051,
+          0.5822178944945335
+        ],
+        "train_accs": [
+          0.681183932346723,
+          0.6887103594080338,
+          0.6887949260042283,
+          0.6958985200845665,
+          0.692262156448203,
+          0.694799154334038,
+          0.6972515856236786,
+          0.6957293868921776
+        ],
+        "val_accs": [
+          0.666008685353336,
+          0.690485590209238,
+          0.6770627714172918,
+          0.6814054480852744,
+          0.6841689696012633,
+          0.6877220686932491,
+          0.6869324911172523,
+          0.6845637583892618
+        ],
+        "lr_history": [
+          0.0012,
+          0.0012,
+          0.0012,
+          0.0012,
+          0.0012,
+          0.0012,
+          0.0012,
+          0.0012
+        ]
+      }
+    },
+    {
+      "run_name": "structural_8ep",
+      "report_path": "reports/diag8_run2_structural_hd128.json",
+      "config": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "data/IMS/data_202603142120.csv",
+        "include_live_xml": true,
+        "batch_size": 32,
+        "learning_rate": 0.0008,
+        "dropout_prob": 0.2,
+        "num_epochs": 8,
+        "patience": 8,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.05,
+        "threshold_max": 0.9,
+        "threshold_steps": 86,
+        "threshold_min_precision": 0.32,
+        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 1.0,
+        "precision": 0.32504930966469425,
+        "f1": 0.490622208990771,
+        "accuracy": 0.32504930966469425,
+        "auc": 0.6804138555208161,
+        "threshold": 0.05,
+        "val_best_recall": 1.0,
+        "recall_delta_vs_baseline_pct_points": 0.0
+      },
+      "curves": {
+        "train_losses": [
+          0.6034664388443972,
+          0.5879882791557828,
+          0.5847139264280732,
+          0.5833416531214843,
+          0.5764349827895293,
+          0.5734595605650463,
+          0.5697084193294113,
+          0.5547033361486486
+        ],
+        "val_losses": [
+          0.5963290832936764,
+          0.5881064902991057,
+          0.5876701824367047,
+          0.587072478979826,
+          0.5868763960897923,
+          0.5908832870423794,
+          0.592207382619381,
+          0.5810158438980579
+        ],
+        "train_accs": [
+          0.6829598308668076,
+          0.6905708245243128,
+          0.6908245243128964,
+          0.6925158562367865,
+          0.6994503171247357,
+          0.7023255813953488,
+          0.7034249471458773,
+          0.7139957716701902
+        ],
+        "val_accs": [
+          0.6695617844453218,
+          0.6786419265692855,
+          0.6794315041452823,
+          0.6873272799052507,
+          0.6928543229372286,
+          0.6762731938412949,
+          0.6861429135412555,
+          0.6948282668772207
+        ],
+        "lr_history": [
+          0.0008,
+          0.0008,
+          0.0008,
+          0.0008,
+          0.0008,
+          0.0008,
+          0.00016,
+          0.00016
+        ]
+      }
+    },
+    {
+      "run_name": "structural_threshold_tuned_8ep",
+      "report_path": "reports/diag8_run3_structural_threshold_tuned.json",
+      "config": {
+        "lookback_days": 14,
+        "use_integrated_data": true,
+        "weather_csv_path": "data/IMS/data_202603142120.csv",
+        "include_live_xml": true,
+        "batch_size": 32,
+        "learning_rate": 0.0008,
+        "dropout_prob": 0.2,
+        "num_epochs": 8,
+        "patience": 8,
+        "hybrid_hidden_dim": 128,
+        "model_names": [
+          "JellyfishNet"
+        ],
+        "scheduler_factor": 0.2,
+        "scheduler_patience": 1,
+        "grad_clip_norm": 1.0,
+        "threshold_min": 0.11,
+        "threshold_max": 0.9,
+        "threshold_steps": 80,
+        "threshold_min_precision": 0.34,
+        "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+        "n_features_per_day": 33
+      },
+      "metrics": {
+        "recall": 0.9514563106796117,
+        "precision": 0.3470562195661797,
+        "f1": 0.5085955238404152,
+        "accuracy": 0.40236686390532544,
+        "auc": 0.678655884539218,
+        "threshold": 0.11,
+        "val_best_recall": 0.967020023557126,
+        "recall_delta_vs_baseline_pct_points": -4.854368932038833
+      },
+      "curves": {
+        "train_losses": [
+          0.6025542303517059,
+          0.5904606302042266,
+          0.5874988064572618,
+          0.5812422536514901,
+          0.5777260707842337,
+          0.5668635722753164,
+          0.5634815423875241,
+          0.5597056315557377
+        ],
+        "val_losses": [
+          0.5958070017397403,
+          0.5874761547893286,
+          0.5849598661065102,
+          0.5857826717197895,
+          0.5858142305165529,
+          0.5849168960005044,
+          0.5819544948637485,
+          0.5823383700102568
+        ],
+        "train_accs": [
+          0.6828752642706131,
+          0.6882029598308668,
+          0.6891331923890064,
+          0.693276955602537,
+          0.6959830866807611,
+          0.7046934460887949,
+          0.7092600422832981,
+          0.7133192389006342
+        ],
+        "val_accs": [
+          0.6841689696012633,
+          0.6778523489932886,
+          0.681010659297276,
+          0.6896960126332412,
+          0.685748124753257,
+          0.6900908014212397,
+          0.6869324911172523,
+          0.6896960126332412
+        ],
+        "lr_history": [
+          0.0008,
+          0.0008,
+          0.0008,
+          0.0008,
+          0.00016,
+          0.00016,
+          0.00016,
+          0.00016
+        ]
+      }
+    }
+  ]
+}

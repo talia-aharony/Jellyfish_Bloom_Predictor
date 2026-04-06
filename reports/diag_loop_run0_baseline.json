@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-04-06T02:04:24",
+  "config": {
+    "lookback_days": 14,
+    "use_integrated_data": true,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "dropout_prob": 0.3,
+    "num_epochs": 5,
+    "patience": 5,
+    "hybrid_hidden_dim": 64,
+    "model_names": [
+      "JellyfishNet"
+    ],
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 5,
+    "grad_clip_norm": 1.0,
+    "threshold_min": 0.1,
+    "threshold_max": 0.9,
+    "threshold_steps": 81,
+    "threshold_min_precision": 0.4,
+    "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+    "n_features_per_day": 33
+  },
+  "results": {
+    "JellyfishNet": {
+      "recall": 0.8349514563106796,
+      "precision": 0.39677047289504036,
+      "f1": 0.5379202501954652,
+      "accuracy": 0.5337278106508876,
+      "auc": 0.6747952284759381,
+      "threshold": 0.21000000000000002,
+      "val_best_recall": 0.8645465253239105,
+      "val_best_f1": 0.0,
+      "confusion_matrix": [
+        [
+          665,
+          1046
+        ],
+        [
+          136,
+          688
+        ]
+      ],
+      "train_losses": [
+        0.6087158981207255,
+        0.5929268620304159,
+        0.5916219312596965,
+        0.5862787650243656,
+        0.5842846482992172
+      ],
+      "val_losses": [
+        0.5920473393052816,
+        0.5893557414412498,
+        0.5917637959122658,
+        0.5844002984464168,
+        0.588856079056859
+      ],
+      "train_accs": [
+        0.6789852008456659,
+        0.6874418604651162,
+        0.6856659619450317,
+        0.6906553911205074,
+        0.6935306553911205
+      ],
+      "val_accs": [
+        0.6770627714172918,
+        0.6750888274772996,
+        0.673509672325306,
+        0.6790367153572838,
+        0.6806158705092775
+      ],
+      "lr_history": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ]
+    }
+  }
+}

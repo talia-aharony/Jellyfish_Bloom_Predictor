@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-04-06T03:39:49",
+  "config": {
+    "lookback_days": 21,
+    "use_integrated_data": false,
+    "weather_csv_path": "data/IMS/data_202603142120.csv",
+    "include_live_xml": true,
+    "batch_size": 16,
+    "learning_rate": 0.0005,
+    "dropout_prob": 0.1,
+    "num_epochs": 5,
+    "patience": 5,
+    "hybrid_hidden_dim": 128,
+    "model_names": [
+      "JellyfishNet"
+    ],
+    "scheduler_factor": 0.3,
+    "scheduler_patience": 1,
+    "grad_clip_norm": 1.0,
+    "threshold_min": 0.05,
+    "threshold_max": 0.9,
+    "threshold_steps": 86,
+    "threshold_min_precision": 0.3,
+    "threshold_selection_metric": "recall_on_validation_subject_to_min_precision",
+    "n_features_per_day": 11
+  },
+  "results": {
+    "JellyfishNet": {
+      "recall": 1.0,
+      "precision": 0.34049323786793956,
+      "f1": 0.5080118694362018,
+      "accuracy": 0.34049323786793956,
+      "auc": 0.7024184638625526,
+      "threshold": 0.05,
+      "val_best_recall": 1.0,
+      "val_best_f1": 0.0,
+      "confusion_matrix": [
+        [
+          0,
+          1658
+        ],
+        [
+          0,
+          856
+        ]
+      ],
+      "train_losses": [
+        0.6014299234540531,
+        0.5890869756837821,
+        0.5834067234157052,
+        0.5777834881945815,
+        0.5720595721495916
+      ],
+      "val_losses": [
+        0.603589097975166,
+        0.5864845117565932,
+        0.5922763260306826,
+        0.5857590000340893,
+        0.5877353949531628
+      ],
+      "train_accs": [
+        0.683465506949774,
+        0.6880702651999658,
+        0.6901168244222734,
+        0.6948068559733948,
+        0.7008612603393878
+      ],
+      "val_accs": [
+        0.6799363057324841,
+        0.6914808917197452,
+        0.6926751592356688,
+        0.6930732484076433,
+        0.6878980891719745
+      ],
+      "lr_history": [
+        0.0005,
+        0.0005,
+        0.0005,
+        0.0005,
+        0.0005
+      ]
+    }
+  }
+}
