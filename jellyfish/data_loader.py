@@ -203,7 +203,6 @@ def map_live_rss_features_to_beaches(live_daily, daily_citizen):
         return pd.DataFrame(columns=["beach_id", "date"])
 
     mapped_frames = []
-    radiation_cols = [c for c in live_daily.columns if c.startswith("radiation_")]
 
     for _, beach in beach_source_map.iterrows():
         city_source = beach["city_source"]
@@ -246,9 +245,6 @@ def map_live_rss_features_to_beaches(live_daily, daily_citizen):
         beach_daily["rss_flood_alert_count"] = live_daily.get(f"flood_alert_{alert_source}_count")
         beach_daily["rss_flood_alert_active"] = live_daily.get(f"flood_alert_{alert_source}_active")
 
-        for col in radiation_cols:
-            beach_daily[f"rss_{col}"] = live_daily[col]
-
         mapped_frames.append(beach_daily)
 
     mapped_live = pd.concat(mapped_frames, ignore_index=True)
@@ -265,8 +261,7 @@ def load_live_ims_xml_features(region=None, beach_locations_df=None):
         beach_locations_df: DataFrame with beach locations to auto-detect regions
     
     Returns:
-        DataFrame with one row per date and globally aggregated weather/sea/radiation
-        features from IMS XML feeds.
+        DataFrame with one row per date and globally aggregated weather/sea/flood alert
     """
     print("\n🌐 Loading live IMS RSS feeds...")
     
@@ -284,9 +279,9 @@ def load_live_ims_xml_features(region=None, beach_locations_df=None):
             print("  ⚠️  beach_locations_df missing required columns, using central_coast")
 
     if region == "all" or region is None:
-        print("  Fetching all coast RSS feeds plus flood alerts and radiation feeds")
+        print("  Fetching all coast RSS feeds plus flood alerts")
     else:
-        print(f"  Fetching specified coast RSS feed: {fetcher_region} (plus flood alerts/radiation)")
+        print(f"  Fetching specified coast RSS feed: {fetcher_region} (plus flood alerts)")
 
     try:
         fetcher = IMSWeatherFetcher(region=fetcher_region)
@@ -376,22 +371,6 @@ def _parse_live_ims_payload(payload):
         value_cols = [col for col in sea_daily.columns if col != "date"]
         sea_daily = sea_daily.groupby("date", as_index=False)[value_cols].mean(numeric_only=True)
 
-    rad_rows = []
-    rad_payload = payload.get("radiation_rss") if payload else None
-    if rad_payload:
-        rad_date = _parse_pubdate_to_date(rad_payload.get("pub_date"))
-        rad_rows.append({
-            "date": rad_date,
-            "radiation_city_mentions": pd.to_numeric(rad_payload.get("city_mentions"), errors="coerce"),
-            "radiation_low_mentions": pd.to_numeric(rad_payload.get("low_mentions"), errors="coerce"),
-            "radiation_medium_mentions": pd.to_numeric(rad_payload.get("medium_mentions"), errors="coerce"),
-            "radiation_high_mentions": pd.to_numeric(rad_payload.get("high_mentions"), errors="coerce"),
-            "radiation_very_high_mentions": pd.to_numeric(rad_payload.get("very_high_mentions"), errors="coerce"),
-        })
-
-    rad_daily = pd.DataFrame(rad_rows)
-    if not rad_daily.empty:
-        rad_daily = rad_daily.dropna(subset=["date"])
 
     alert_rows = []
     alerts_payload = payload.get("alerts_rss", {}) if payload else {}
@@ -412,7 +391,7 @@ def _parse_live_ims_payload(payload):
     
     # Combine all frames
     daily_frames = []
-    for frame in [city_daily, sea_daily, rad_daily, alert_daily]:
+    for frame in [city_daily, sea_daily, alert_daily]:
         if frame is not None and not frame.empty and "date" in frame.columns:
             frame = frame.dropna(subset=["date"])
             daily_frames.append(frame)

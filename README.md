@@ -213,7 +213,7 @@ from jellyfish.weather import IMSWeatherFetcher
 
 To keep outputs organized after many runs:
 
-- Active model checkpoints stay at project root (`baseline_model.pth`, `gru_model.pth`) and in `models/`.
+- Active model checkpoints stay in `models/` directory (`baseline_model.pth`, `gru_model.pth`, `jellyfishnet_model.pth`).
 - Older model sweep folders are archived under `models/archive/sweeps/`.
 - Historical report batches are archived under:
 	- `reports/archive/sweeps/`

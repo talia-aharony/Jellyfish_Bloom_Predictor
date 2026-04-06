@@ -6,8 +6,10 @@ Train jellyfish forecasting models and save weights to disk.
 Two modes
 ─────────
 Global training  (default):
-    Trains on all beaches combined.  Produces one model file per architecture.
+    Trains selected model(s) on all beaches combined.
+    Produces one model file per architecture.
     Use as a baseline or as the starting point for per-beach fine-tuning.
+    Default models: JellyfishNet (see settings.py to change)
 
 Per-beach fine-tuning  (--finetune-per-beach):
     Loads a pre-trained global JellyfishNet checkpoint and fine-tunes a
@@ -16,8 +18,11 @@ Per-beach fine-tuning  (--finetune-per-beach):
 
 Usage examples
 ──────────────
-    # Global training (GRU + JellyfishNet)
+    # Global training (default: JellyfishNet)
     python -m jellyfish.train
+
+    # Train multiple models
+    python -m jellyfish.train --models Baseline,GRUNet,JellyfishNet
 
     # Per-beach fine-tuning from a global checkpoint
     python -m jellyfish.train --finetune-per-beach \\
@@ -418,7 +423,7 @@ def train_all_models(
 
     config = {
         "lookback_days":              int(lookback_days),
-        "use_integrated_data":        True,
+        "data_loading_mode":          "integrated",  # Always uses citizen science + IMS + live RSS
         "weather_csv_path":           str(weather_csv_path),
         "include_live_xml":           bool(include_live_xml),
         "batch_size":                 int(batch_size),

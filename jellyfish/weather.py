@@ -24,8 +24,6 @@ class IMSWeatherFetcher:
         "tel_aviv_coast": "https://ims.gov.il/sites/default/files/ims_data/rss/forecast_city/rssForecastCity_402_en.xml",
     }
 
-    RADIATION_RSS_URL = "https://ims.gov.il/sites/default/files/ims_data/rss/forecast_radiation/rssForecastRadiation_en.xml"
-
     FLOOD_ALERT_RSS_FEEDS = {
         "north": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_north_en.xml",
         "center": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_flood_center_en.xml",
@@ -57,7 +55,7 @@ class IMSWeatherFetcher:
         Args:
             fetch_all_sea_regions: If True, fetch all coastal sea feeds into
                 ``sea_rss``. If False, only fetch the currently selected region.
-            include_global_feeds: If True, fetch city/radiation/alerts feeds.
+            include_global_feeds: If True, fetch city/flood-alert feeds.
                 Set False to avoid duplicate global fetches across region loops.
 
         Returns:
@@ -65,7 +63,6 @@ class IMSWeatherFetcher:
             - coastal_rss: Parsed sea forecast for selected region
             - sea_rss: Parsed sea forecasts for north/center/south coasts
             - city_rss: Parsed city forecasts (Ashdod, Haifa, Tel Aviv Coast)
-            - radiation_rss: Parsed UV forecast summary
             - alerts_rss: Parsed flood/flash-flood warnings by region
             - tel_aviv_coast_label: label mapping provided by user
         """
@@ -73,7 +70,6 @@ class IMSWeatherFetcher:
             "coastal_rss": self.fetch_forecast(),
             "sea_rss": {},
             "city_rss": {},
-            "radiation_rss": None,
             "alerts_rss": {}
         }
 
@@ -103,13 +99,6 @@ class IMSWeatherFetcher:
                     print(f"[IMSWeatherFetcher] City RSS loaded: {city_name}")
                 else:
                     print(f"[IMSWeatherFetcher] City RSS parse failed: {city_name}")
-
-            radiation_xml = self._fetch_xml(self.RADIATION_RSS_URL)
-            if radiation_xml:
-                result["radiation_rss"] = self._parse_radiation_rss(radiation_xml)
-                print(f"[IMSWeatherFetcher] Radiation RSS loaded")
-            else:
-                print(f"[IMSWeatherFetcher] Radiation RSS fetch failed")
 
             for alert_region, url in self.FLOOD_ALERT_RSS_FEEDS.items():
                 xml_text = self._fetch_xml(url)
@@ -240,40 +229,6 @@ class IMSWeatherFetcher:
             }
         except Exception as exc:
             print(f"[IMSWeatherFetcher] City RSS parse error ({city_name}): {exc}")
-            return None
-
-    def _parse_radiation_rss(self, xml_string: str) -> dict | None:
-        try:
-            root = ET.fromstring(xml_string)
-            item = root.find("./channel/item")
-            if item is None:
-                return None
-
-            title = item.findtext("title")
-            pub_date = item.findtext("pubDate")
-            description = self._clean_html(item.findtext("description") or "")
-            update_match = re.search(r"last update:\s*([\d\-\s:]+)", description, flags=re.IGNORECASE)
-
-            city_mentions = len(re.findall(r"[A-Za-z][A-Za-z\s]+:\s*Low:", description))
-            low_mentions = len(re.findall(r"\bLow:\b", description))
-            medium_mentions = len(re.findall(r"\bMedium:\b", description))
-            high_mentions = len(re.findall(r"\bHigh:\b", description))
-            very_high_mentions = len(re.findall(r"\bVery high:\b", description, flags=re.IGNORECASE))
-
-            return {
-                "source": "radiation_rss",
-                "title": title,
-                "pub_date": pub_date,
-                "last_update": update_match.group(1).strip() if update_match else None,
-                "city_mentions": city_mentions,
-                "low_mentions": low_mentions,
-                "medium_mentions": medium_mentions,
-                "high_mentions": high_mentions,
-                "very_high_mentions": very_high_mentions,
-                "description": description,
-            }
-        except Exception as exc:
-            print(f"[IMSWeatherFetcher] Radiation RSS parse error: {exc}")
             return None
 
     def _parse_alert_rss(self, xml_string: str, region: str) -> dict | None:

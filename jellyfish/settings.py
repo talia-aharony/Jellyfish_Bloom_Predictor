@@ -9,8 +9,7 @@ DEFAULT_LOOKBACK_DAYS = 24
 #   - "path/to/file.csv": use single IMS CSV file
 #   - ["file1.csv", "file2.csv"]: consolidate these specific CSV files
 DEFAULT_WEATHER_CSV_PATH = None  # Auto-discover all IMS CSV files
-DEFAULT_USE_INTEGRATED_DATA = True
-DEFAULT_INCLUDE_LIVE_XML = True
+DEFAULT_INCLUDE_LIVE_XML = True  # Include live RSS feeds (city/sea/flood alerts)
 
 DEFAULT_BATCH_SIZE = 17
 DEFAULT_LEARNING_RATE = 0.000707

@@ -215,7 +215,6 @@ class JellyfishPredictor:
             'metadata': metadata,
             'X_tensor': X_tensor,
             'feature_cols': feature_cols,
-            'use_integrated_data': True,
         }
         self.beach_geo_lookup = self._build_beach_geo_lookup()
 
