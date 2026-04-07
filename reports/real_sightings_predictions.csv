@@ -1,0 +1,61 @@
+date,beach_id,beach_name,actual,source,gru_probability,gru_predicted,gru_correct,jnet_probability,jnet_predicted,jnet_correct
+2022-07-11,19,Ashkelon-Ashdod,1,citizen_science_fallback,0.5701,1,1,0.7998,1,1
+2024-05-20,18,Ashdod-Palmahim,1,citizen_science_fallback,0.4218,1,1,0.5738,1,1
+2023-07-15,9,Hadera-Jisr a zarqa,1,citizen_science_fallback,0.4724,1,1,0.6436,1,1
+2024-05-23,18,Ashdod-Palmahim,1,citizen_science_fallback,0.4524,1,1,0.5755,1,1
+2022-10-29,17,Palmahim-Rishon,1,citizen_science_fallback,0.399,1,1,0.3617,1,1
+2024-05-18,12,Gaash-Natanya,1,citizen_science_fallback,0.2086,1,1,0.1831,1,1
+2022-06-24,10,Michmoret-Hadera,1,citizen_science_fallback,0.4743,1,1,0.5305,1,1
+2023-06-24,17,Palmahim-Rishon,1,citizen_science_fallback,0.2314,1,1,0.3461,1,1
+2022-06-08,15,Jaffa-Tel Aviv,1,citizen_science_fallback,0.1748,1,1,0.203,1,1
+2022-07-22,9,Hadera-Jisr a zarqa,1,citizen_science_fallback,0.5629,1,1,0.8773,1,1
+2022-07-30,3,Kiryat Yam-Acco,1,citizen_science_fallback,0.2822,1,1,0.3674,1,1
+2022-06-22,6,Atlit-Tira,1,citizen_science_fallback,0.2959,1,1,0.3974,1,1
+2022-08-12,10,Michmoret-Hadera,1,citizen_science_fallback,0.1883,1,1,0.1523,1,1
+2024-05-18,7,Dor-Atlit,1,citizen_science_fallback,0.3462,1,1,0.3239,1,1
+2023-07-07,15,Jaffa-Tel Aviv,1,citizen_science_fallback,0.2002,1,1,0.3338,1,1
+2022-09-12,6,Atlit-Tira,1,citizen_science_fallback,0.1432,1,1,0.1315,1,1
+2022-07-07,11,Natanya-Michmoret,1,citizen_science_fallback,0.3991,1,1,0.5867,1,1
+2022-06-20,17,Palmahim-Rishon,1,citizen_science_fallback,0.5253,1,1,0.7328,1,1
+2022-06-24,19,Ashkelon-Ashdod,1,citizen_science_fallback,0.2286,1,1,0.256,1,1
+2023-06-28,5,Tira-Shiqmona,1,citizen_science_fallback,0.2052,1,1,0.2434,1,1
+2022-06-14,6,Atlit-Tira,1,citizen_science_fallback,0.2341,1,1,0.2956,1,1
+2022-07-23,7,Dor-Atlit,1,citizen_science_fallback,0.4179,1,1,0.5619,1,1
+2022-06-21,9,Hadera-Jisr a zarqa,1,citizen_science_fallback,0.3854,1,1,0.5626,1,1
+2022-06-30,10,Michmoret-Hadera,1,citizen_science_fallback,0.621,1,1,0.6653,1,1
+2022-07-05,17,Palmahim-Rishon,1,citizen_science_fallback,0.73,1,1,0.8799,1,1
+2022-06-26,7,Dor-Atlit,1,citizen_science_fallback,0.6159,1,1,0.6964,1,1
+2022-06-24,1,Nahariya-Rosh Hniqra,1,citizen_science_fallback,0.4591,1,1,0.5666,1,1
+2022-05-27,5,Tira-Shiqmona,1,citizen_science_fallback,0.2023,1,1,0.2955,1,1
+2022-06-22,9,Hadera-Jisr a zarqa,1,citizen_science_fallback,0.2799,1,1,0.3698,1,1
+2022-07-15,10,Michmoret-Hadera,1,citizen_science_fallback,0.6328,1,1,0.787,1,1
+2022-10-17,19,Ashkelon-Ashdod,0,citizen_science_fallback,0.1069,0,1,0.1883,1,0
+2023-07-21,15,Jaffa-Tel Aviv,0,citizen_science_fallback,0.4535,1,0,0.3533,1,0
+2022-05-25,17,Palmahim-Rishon,0,citizen_science_fallback,0.2028,1,0,0.2526,1,0
+2023-05-16,7,Dor-Atlit,0,citizen_science_fallback,0.2458,1,0,0.168,1,0
+2022-08-15,15,Jaffa-Tel Aviv,0,citizen_science_fallback,0.3243,1,0,0.3678,1,0
+2023-06-30,7,Dor-Atlit,0,citizen_science_fallback,0.2171,1,0,0.2452,1,0
+2023-06-07,19,Ashkelon-Ashdod,0,citizen_science_fallback,0.1883,1,0,0.1691,1,0
+2023-06-06,17,Palmahim-Rishon,0,citizen_science_fallback,0.2499,1,0,0.2432,1,0
+2023-09-07,15,Jaffa-Tel Aviv,0,citizen_science_fallback,0.1469,1,0,0.1289,1,0
+2023-05-30,17,Palmahim-Rishon,0,citizen_science_fallback,0.2278,1,0,0.2685,1,0
+2022-10-16,17,Palmahim-Rishon,0,citizen_science_fallback,0.1606,1,0,0.2081,1,0
+2023-05-31,7,Dor-Atlit,0,citizen_science_fallback,0.2308,1,0,0.2362,1,0
+2022-10-06,18,Ashdod-Palmahim,0,citizen_science_fallback,0.2267,1,0,0.1936,1,0
+2023-08-23,4,Shiqmona-Kiryat yam,0,citizen_science_fallback,0.1297,0,1,0.1192,0,1
+2022-08-12,1,Nahariya-Rosh Hniqra,0,citizen_science_fallback,0.1398,0,1,0.1236,1,0
+2022-07-24,7,Dor-Atlit,0,citizen_science_fallback,0.4734,1,0,0.5956,1,0
+2023-07-20,4,Shiqmona-Kiryat yam,0,citizen_science_fallback,0.2457,1,0,0.1724,1,0
+2023-07-08,11,Natanya-Michmoret,0,citizen_science_fallback,0.3211,1,0,0.3579,1,0
+2023-10-11,4,Shiqmona-Kiryat yam,0,citizen_science_fallback,0.1182,0,1,0.11,0,1
+2022-09-23,17,Palmahim-Rishon,0,citizen_science_fallback,0.1571,1,0,0.1197,0,1
+2022-09-07,6,Atlit-Tira,0,citizen_science_fallback,0.1885,1,0,0.2376,1,0
+2022-09-22,6,Atlit-Tira,0,citizen_science_fallback,0.1349,0,1,0.1185,0,1
+2023-09-07,7,Dor-Atlit,0,citizen_science_fallback,0.1141,0,1,0.1046,0,1
+2023-05-28,19,Ashkelon-Ashdod,0,citizen_science_fallback,0.1853,1,0,0.1793,1,0
+2023-09-18,7,Dor-Atlit,0,citizen_science_fallback,0.0868,0,1,0.1046,0,1
+2024-05-24,3,Kiryat Yam-Acco,0,citizen_science_fallback,0.3041,1,0,0.3423,1,0
+2023-06-28,17,Palmahim-Rishon,0,citizen_science_fallback,0.3859,1,0,0.4725,1,0
+2022-06-25,9,Hadera-Jisr a zarqa,0,citizen_science_fallback,0.4841,1,0,0.6335,1,0
+2023-09-17,5,Tira-Shiqmona,0,citizen_science_fallback,0.1086,0,1,0.1033,0,1
+2023-10-18,7,Dor-Atlit,0,citizen_science_fallback,0.1262,0,1,0.111,0,1
