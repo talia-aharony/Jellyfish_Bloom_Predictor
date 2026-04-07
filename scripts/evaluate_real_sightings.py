@@ -282,6 +282,8 @@ def _parse_date(text: str):
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y",
                 "%Y/%m/%d", "%d %b %Y", "%B %d, %Y"):
         try:
+            # Slice with a small buffer (+4) to accommodate leading
+            # whitespace or day-name prefixes before the date token.
             return datetime.strptime(text[:len(fmt) + 4].split()[0], fmt).date()
         except Exception:
             pass
@@ -415,7 +417,7 @@ def map_to_model_beach_id(beach_name: str) -> int | None:
 
     # 2. Fuzzy match against known beach names
     best_id, best_score = None, 0.0
-    for bid, (name, _, __) in MODEL_BEACHES.items():
+    for bid, (name, *_) in MODEL_BEACHES.items():
         score = _string_similarity(beach_name, name)
         if score > best_score:
             best_score = score
