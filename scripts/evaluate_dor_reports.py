@@ -161,7 +161,7 @@ def main():
     output_df = pd.DataFrame(output_rows)
     output_df = output_df.sort_values(["report_date", "report_time", "observation_id"])
 
-    output_path = "reports/dor_edelist_model_test.csv"
+    output_path = "reports/final/dor/dor_report_predictions.csv"
     output_df.to_csv(output_path, index=False)
 
     mapped_count = int(output_df["model_beach_id"].notna().sum())

@@ -187,9 +187,9 @@ def main():
     parser.add_argument("--weather-csv-path", type=str, default=DEFAULT_WEATHER_CSV_PATH)
     parser.add_argument("--disable-live-xml", action="store_true", default=not DEFAULT_INCLUDE_LIVE_XML)
     parser.add_argument("--threshold", type=float, default=0.5)
-    parser.add_argument("--output-md", type=str, default="reports/qualitative_analysis.md")
-    parser.add_argument("--output-csv", type=str, default="reports/qualitative_samples.csv")
-    parser.add_argument("--output-beach-csv", type=str, default="reports/qualitative_by_beach.csv")
+    parser.add_argument("--output-md", type=str, default="reports/final/qualitative/qualitative_analysis.md")
+    parser.add_argument("--output-csv", type=str, default="reports/final/qualitative/qualitative_samples.csv")
+    parser.add_argument("--output-beach-csv", type=str, default="reports/final/qualitative/qualitative_by_beach.csv")
     args = parser.parse_args()
 
     model_names = [m.strip() for m in args.models.split(",") if m.strip()]
@@ -396,7 +396,7 @@ def main():
     lines.append("")
     lines.append(
         "The table below aggregates performance and context per beach across the full test subset, "
-        "so you can see where the model predicts well vs poorly by location."
+        "so the results show where the model predicts well vs poorly by location."
     )
     lines.append("")
     beach_cols = [

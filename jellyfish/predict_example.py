@@ -22,8 +22,8 @@ else:
     from .terminal_format import rule, section
 
 
-DEFAULT_BASELINE_MODEL_PATH = "baseline_model.pth"
-DEFAULT_JELLYFISHNET_MODEL_PATH = "model_runs/st017_jellynet_e100/jellyfishnet_model.pth"
+DEFAULT_BASELINE_MODEL_PATH = "models/baseline_model.pth"
+DEFAULT_JELLYFISHNET_MODEL_PATH = "models/jellyfishnet_model.pth"
 
 
 def _parse_forecast_date(value):
@@ -106,7 +106,7 @@ def run_prediction_session(predictor, loaded_models, metadata):
             print("❌ Please enter a valid beach ID.")
             continue
 
-        print("Use the beach list from your report or sample tables if you need names/IDs.")
+        print("Use the beach list from the report or sample tables if names/IDs are needed.")
 
         mode = input("Choose forecast input mode [d]ays ahead or [f]orecast date: ").strip().lower()
         if mode in {"q", "quit", "exit"}:
@@ -425,8 +425,8 @@ def main(
     print(f"✓ Made predictions for {len(predictions_list)} beach-date combination(s)")
     print()
     print("Next steps:")
-    print("  1. Modify this script to predict for your dates of interest")
-    print("  2. Use predictor.predict_for_beach_date() in your own code")
+    print("  1. Modify this script to predict for the target dates of interest")
+    print("  2. Use predictor.predict_for_beach_date() in custom code")
     print("  3. Load different models and compare predictions")
 
 

@@ -94,8 +94,8 @@ def main() -> None:
     parser.add_argument(
         "--extra-pattern",
         type=str,
-        default="reports/*.json",
-        help="Additional glob pattern (default: reports/*.json)",
+        default="reports/final/**/*.json",
+        help="Additional glob pattern (default: reports/final/**/*.json)",
     )
     parser.add_argument(
         "--model",
@@ -118,7 +118,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    paths = sorted(set(glob.glob(args.pattern) + glob.glob(args.extra_pattern)))
+    paths = sorted(set(glob.glob(args.pattern, recursive=True) + glob.glob(args.extra_pattern, recursive=True)))
 
     if not paths:
         print("No report files found.")

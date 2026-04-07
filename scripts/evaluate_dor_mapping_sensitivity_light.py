@@ -95,8 +95,8 @@ def main():
         })
     diff_df = pd.DataFrame(diffs).sort_values('changed_predictions', ascending=False)
 
-    summary_path = 'reports/dor_mapping_sensitivity_light_summary.csv'
-    diff_path = 'reports/dor_mapping_sensitivity_light_diffs.csv'
+    summary_path = 'reports/final/dor/sensitivity_light/summary.csv'
+    diff_path = 'reports/final/dor/sensitivity_light/diffs.csv'
     summary_df.to_csv(summary_path, index=False)
     diff_df.to_csv(diff_path, index=False)
 

@@ -125,8 +125,8 @@ def main():
         else 0.0
     )
 
-    details_path = "reports/dor_real_sightings_model_comparison.csv"
-    summary_path = "reports/dor_real_sightings_model_comparison_summary.csv"
+    details_path = "reports/final/dor/dor_model_comparison_details.csv"
+    summary_path = "reports/final/dor/dor_model_comparison_summary.csv"
     output_df.to_csv(details_path, index=False)
     comparison_summary.to_csv(summary_path, index=False)
 

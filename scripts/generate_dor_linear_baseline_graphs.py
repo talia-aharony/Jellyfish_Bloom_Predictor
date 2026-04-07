@@ -162,11 +162,11 @@ def main():
     baseline_metrics = _compute_metrics(valid["actual"].values, valid["b_pred"].values)
     jelly_metrics = _compute_metrics(valid["actual"].values, valid["j_pred"].values)
 
-    os.makedirs("reports", exist_ok=True)
+    os.makedirs("reports/final/dor", exist_ok=True)
     suffix = f"_{args.output_suffix}" if args.output_suffix else ""
-    comparison_csv = f"reports/dor_real_sightings_model_comparison_linear_baseline{suffix}.csv"
-    summary_json = f"reports/dor_real_sightings_model_comparison_linear_baseline_summary{suffix}.json"
-    plot_path = f"reports/dor_real_sightings_evaluation_linear_baseline{suffix}.png"
+    comparison_csv = f"reports/final/dor/dor_model_comparison{suffix}.csv"
+    summary_json = f"reports/final/dor/dor_model_comparison_summary{suffix}.json"
+    plot_path = f"reports/final/dor/dor_evaluation{suffix}.png"
 
     output_df.to_csv(comparison_csv, index=False)
     with open(summary_json, "w") as f:

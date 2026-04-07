@@ -143,9 +143,9 @@ def main():
 
     delta_df = pd.DataFrame(deltas).sort_values("total_changed_vs_baseline", ascending=False)
 
-    summary_path = "reports/dor_mapping_sensitivity_summary.csv"
-    delta_path = "reports/dor_mapping_sensitivity_changes.csv"
-    all_pred_path = "reports/dor_mapping_sensitivity_all_predictions.csv"
+    summary_path = "reports/final/dor/sensitivity/summary.csv"
+    delta_path = "reports/final/dor/sensitivity/changes.csv"
+    all_pred_path = "reports/final/dor/sensitivity/all_predictions.csv"
 
     summary_df.to_csv(summary_path, index=False)
     delta_df.to_csv(delta_path, index=False)

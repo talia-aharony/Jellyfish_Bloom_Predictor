@@ -1,7 +1,7 @@
 """
 Model Evaluation Module - Comprehensive Metrics
 
-Computes and compares metrics for Baseline vs Your Model:
+Computes and compares metrics for Baseline vs JellyfishNet:
 - Accuracy, Precision, Recall, F1-Score
 - ROC-AUC, Confusion Matrix
 - Agreement analysis
@@ -21,7 +21,7 @@ from .terminal_format import rule, section
 
 
 class ModelEvaluator:
-    """Evaluate and compare Baseline vs Your Model"""
+    """Evaluate and compare Baseline vs JellyfishNet"""
     
     def __init__(self, predictor):
         """
@@ -80,7 +80,7 @@ class ModelEvaluator:
             actuals, baseline_preds, baseline_probs, 'Baseline'
         )
         self.your_model_metrics = self._compute_metrics(
-            actuals, your_model_preds, your_model_probs, 'Your Model'
+            actuals, your_model_preds, your_model_probs, 'JellyfishNet'
         )
         
         # Compute comparison
@@ -136,7 +136,7 @@ class ModelEvaluator:
         return metrics
     
     def _compute_comparison(self, baseline_preds, your_model_preds, actuals):
-        """Compare baseline vs your model"""
+        """Compare baseline vs JellyfishNet"""
         
         comparison = {}
         
@@ -178,7 +178,7 @@ class ModelEvaluator:
             print("No metrics computed yet. Run evaluate_on_dataset() first.")
             return
         
-        section("MODEL EVALUATION METRICS - BASELINE vs YOUR MODEL")
+        section("MODEL EVALUATION METRICS - BASELINE vs JELLYFISHNET")
         print()
         
         # =====================================================================
@@ -186,7 +186,7 @@ class ModelEvaluator:
         # =====================================================================
         
         section("CLASSIFICATION METRICS", fill="-")
-        metrics_header = f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}"
+        metrics_header = f"{'Metric':<25} {'Baseline':<20} {'JellyfishNet':<20} {'Improvement':<20}"
         print(metrics_header)
         print(rule(metrics_header, fill="-"))
         
@@ -284,11 +284,11 @@ class ModelEvaluator:
         print()
         print(f"{'Models disagree:':<{summary_label_width}} {comp['total_disagreement']}")
         print(f"{'  Baseline wins:':<{summary_label_width}} {comp['baseline_wins']}")
-        print(f"{'  Your Model wins:':<{summary_label_width}} {comp['your_model_wins']}")
+        print(f"{'  JellyfishNet wins:':<{summary_label_width}} {comp['your_model_wins']}")
         print(f"{'  Net improvement:':<{summary_label_width}} {comp['net_improvement']:+d}")
         print()
         print(f"{'Baseline accuracy:':<{summary_label_width}} {comp['baseline_accuracy']:.4f} ({comp['baseline_accuracy']*100:.2f}%)")
-        print(f"{'Your Model accuracy:':<{summary_label_width}} {comp['your_model_accuracy']:.4f} ({comp['your_model_accuracy']*100:.2f}%)")
+        print(f"{'JellyfishNet accuracy:':<{summary_label_width}} {comp['your_model_accuracy']:.4f} ({comp['your_model_accuracy']*100:.2f}%)")
         print(f"{'Improvement:':<{summary_label_width}} {comp['accuracy_improvement']:+.4f} ({comp['accuracy_improvement_pct']:+.2f}%)")
         
         print()
@@ -300,12 +300,12 @@ class ModelEvaluator:
         section("SUMMARY")
         
         if comp['your_model_wins'] > comp['baseline_wins']:
-            print(f"✓ Your Model is BETTER")
+            print(f"✓ JellyfishNet is BETTER")
             print(f"  - Outperforms baseline by {comp['your_model_wins']} predictions")
             print(f"  - Accuracy improvement: {comp['accuracy_improvement_pct']:.2f}%")
         elif comp['baseline_wins'] > comp['your_model_wins']:
             print(f"⚠ Baseline is BETTER")
-            print(f"  - Your model needs improvement")
+            print(f"  - JellyfishNet needs improvement")
         else:
             print(f"= Models are EQUIVALENT")
         
@@ -341,7 +341,7 @@ class ModelEvaluator:
             rows.append({
                 'Metric': metric_name,
                 'Baseline': baseline_val,
-                'Your Model': your_model_val,
+                'JellyfishNet': your_model_val,
                 'Improvement': your_model_val - baseline_val
             })
         
@@ -390,8 +390,8 @@ class ModelEvaluator:
             # Metrics table
             f.write("CLASSIFICATION METRICS\n")
             f.write(rule("CLASSIFICATION METRICS", fill="-") + "\n")
-            f.write(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}\n")
-            f.write(rule(f"{'Metric':<25} {'Baseline':<20} {'Your Model':<20} {'Improvement':<20}", fill="-") + "\n")
+            f.write(f"{'Metric':<25} {'Baseline':<20} {'JellyfishNet':<20} {'Improvement':<20}\n")
+            f.write(rule(f"{'Metric':<25} {'Baseline':<20} {'JellyfishNet':<20} {'Improvement':<20}", fill="-") + "\n")
             
             metrics_to_show = [
                 ('Accuracy', 'accuracy'),
@@ -422,7 +422,7 @@ class ModelEvaluator:
             comp = self.comparison
             f.write(f"Total predictions:       {self.baseline_metrics['n_samples']}\n")
             f.write(f"Baseline wins:           {comp['baseline_wins']}\n")
-            f.write(f"Your Model wins:         {comp['your_model_wins']}\n")
+            f.write(f"JellyfishNet wins:       {comp['your_model_wins']}\n")
             f.write(f"Net improvement:         {comp['net_improvement']:+d}\n")
             f.write(f"Accuracy improvement:    {comp['accuracy_improvement_pct']:+.2f}%\n")
         

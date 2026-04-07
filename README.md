@@ -14,13 +14,15 @@ Jellyfish_Bloom_Predictor/
 │   ├── models.py
 │   ├── predict_example.py
 │   ├── predictor.py
+│   ├── settings.py
+│   ├── terminal_format.py
 │   ├── train.py
 │   └── weather.py
-├── scripts/                    # Stable entrypoints
-│   ├── train.py
-│   ├── predict.py
-│   └── evaluate.py
-├── data/                       # Raw data files
+├── scripts/                    # Analysis, tuning, and reporting tools
+├── data/                       # Raw and source data
+├── models/                     # Active checkpoints and model archives
+├── reports/                    # Evaluation outputs and figures
+├── logs/                       # Run logs and terminal transcripts
 ├── README.md
 └── requirements.txt
 ```
@@ -213,7 +215,7 @@ from jellyfish.weather import IMSWeatherFetcher
 
 To keep outputs organized after many runs:
 
-- Active model checkpoints stay in `models/` directory (`baseline_model.pth`, `gru_model.pth`, `jellyfishnet_model.pth`).
+- Active model checkpoints stay in `models/` directory.
 - Older model sweep folders are archived under `models/archive/sweeps/`.
 - Historical report batches are archived under:
 	- `reports/archive/sweeps/`

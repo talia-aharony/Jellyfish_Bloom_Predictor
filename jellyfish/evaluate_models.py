@@ -2,7 +2,7 @@
 """
 Model Evaluation Example
 
-Shows how to evaluate Baseline vs Your Model with comprehensive metrics:
+Shows how to evaluate Baseline vs JellyfishNet with comprehensive metrics:
 - Accuracy, Precision, Recall, F1-Score
 - Sensitivity, Specificity
 - Confusion Matrix
@@ -30,7 +30,7 @@ import numpy as np
 
 
 def main():
-    section("MODEL EVALUATION - BASELINE vs YOUR MODEL")
+    section("MODEL EVALUATION - BASELINE vs JELLYFISHNET")
     print()
     
     # =========================================================================
@@ -44,8 +44,8 @@ def main():
     
     # Load models
     try:
-        predictor.load_model('Baseline', 'baseline_model.pth')
-        predictor.load_model('Hybrid', 'hybrid_model.pth')
+        predictor.load_model('Baseline', 'models/baseline_model.pth')
+        predictor.load_model('JellyfishNet', 'models/jellyfishnet_model.pth')
     except FileNotFoundError as e:
         print(f"❌ Error: {e}")
         print("Please run 'python scripts/train.py' first to train the models")
@@ -115,7 +115,7 @@ def main():
     
     print()
     
-    print("Your Model Confusion Matrix:")
+    print("JellyfishNet Confusion Matrix:")
     print(f"              Predicted Negative | Predicted Positive")
     print(f"Actual Neg:   {cm['your_model']['tn']:18d} | {cm['your_model']['fp']:18d}")
     print(f"Actual Pos:   {cm['your_model']['fn']:18d} | {cm['your_model']['tp']:18d}")
@@ -156,7 +156,7 @@ def main():
     
     print()
     
-    print("✓ Your Model (Hybrid CNN+LSTM):")
+    print("✓ JellyfishNet:")
     print(f"  - Accuracy: {your_model_metrics['accuracy']:.4f}")
     print(f"  - Precision: {your_model_metrics['precision']:.4f}")
     print(f"  - Recall: {your_model_metrics['recall']:.4f}")
@@ -166,7 +166,7 @@ def main():
     
     print("✓ Improvement:")
     print(f"  - Accuracy improvement: {comp['accuracy_improvement_pct']:+.2f}%")
-    print(f"  - Your model wins: {comp['your_model_wins']} predictions")
+    print(f"  - JellyfishNet wins: {comp['your_model_wins']} predictions")
     print(f"  - Baseline wins: {comp['baseline_wins']} predictions")
     
     print()

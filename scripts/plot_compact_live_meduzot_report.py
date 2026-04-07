@@ -34,10 +34,10 @@ def compute_metrics(actual, pred):
 
 
 def main():
-    src = "reports/all_real_sightings_model_comparison_linear_baseline_2024_06_2026_live_meduzot.csv"
-    out_png = "reports/all_real_sightings_compact_report_2024_06_2026_live_meduzot.png"
-    out_pdf = "reports/all_real_sightings_compact_report_2024_06_2026_live_meduzot.pdf"
-    out_json = "reports/all_real_sightings_compact_report_2024_06_2026_live_meduzot_summary.json"
+    src = "reports/final/live_meduzot/live_meduzot_model_comparison_2024_06_2026.csv"
+    out_png = "reports/final/live_meduzot/live_meduzot_compact_report_2024_06_2026.png"
+    out_pdf = "reports/final/live_meduzot/live_meduzot_compact_report_2024_06_2026.pdf"
+    out_json = "reports/final/live_meduzot/live_meduzot_compact_report_2024_06_2026_summary.json"
 
     if not os.path.exists(src):
         raise FileNotFoundError(f"Missing input CSV: {src}")

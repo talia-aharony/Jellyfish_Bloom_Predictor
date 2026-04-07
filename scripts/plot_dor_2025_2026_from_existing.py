@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-src = 'reports/dor_real_sightings_model_comparison_linear_baseline.csv'
+src = 'reports/final/dor/dor_model_comparison_details.csv'
 df = pd.read_csv(src)
 df['report_date'] = pd.to_datetime(df['report_date'], errors='coerce')
 start_date = pd.Timestamp('2024-06-01')
@@ -99,8 +99,8 @@ if acc_rows:
     ax4.set_ylim(0, 1.1); ax4.set_ylabel('Accuracy'); ax4.set_title('Per-Beach Accuracy')
     ax4.legend(fontsize=8); ax4.grid(axis='y', alpha=0.3)
 
-out_plot = 'reports/dor_real_sightings_evaluation_linear_baseline_2024_06_2026.png'
-out_summary = 'reports/dor_real_sightings_model_comparison_linear_baseline_2024_06_2026_summary.json'
+out_plot = 'reports/final/dor/dor_evaluation_2024_06_2026.png'
+out_summary = 'reports/final/dor/dor_model_comparison_2024_06_2026_summary.json'
 plt.savefig(out_plot, dpi=130, bbox_inches='tight')
 plt.close(fig)
 

@@ -12,6 +12,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import os
+from pathlib import Path
 from datetime import timedelta, date
 from .data_loader import (
     load_integrated_data,
@@ -318,6 +319,22 @@ class JellyfishPredictor:
             'gru': 'GRU',
         }
         return aliases.get(name.lower(), name)
+
+    @staticmethod
+    def _resolve_model_path(model_path):
+        """Resolve a checkpoint path with backward-compatible fallbacks."""
+        candidates = [Path(model_path)]
+        path = Path(model_path)
+        if path.name:
+            candidates.extend([
+                Path("models") / path.name,
+                Path("model_runs") / path.name,
+                Path("models/archive") / path.name,
+            ])
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
+        return str(path)
     
     def load_model(self, model_name, model_path, input_dim=None):
         """Load a trained model
@@ -328,6 +345,7 @@ class JellyfishPredictor:
             input_dim: Input dimension (only for Baseline)
         """
         model_name = self._normalize_model_name(model_name)
+        model_path = self._resolve_model_path(model_path)
         checkpoint = torch.load(model_path, map_location=self.device)
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint and isinstance(checkpoint['model_state_dict'], dict):
             state_dict = checkpoint['model_state_dict']
@@ -891,7 +909,7 @@ if __name__ == '__main__':
     print("\nSample beach-date combinations from dataset:")
     print(metadata[['beach_id', 'beach_name', 'forecast_date', 'jellyfish_observed']].head(10))
     
-    # Example prediction (you would replace with actual trained model paths)
+    # Example prediction (replace with actual trained model paths)
     section("To use the predictor:")
     print("""
 1. Load trained models:
