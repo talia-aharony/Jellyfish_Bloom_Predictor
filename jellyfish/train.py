@@ -360,7 +360,10 @@ class Trainer:
             fp = ((b == 1) & (y_true == 0)).sum()
             tprs.append(tp / n_pos)
             fprs.append(fp / n_neg)
-        return float(np.trapz(tprs, fprs))
+        _trapz = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
+        if _trapz is None:
+            return float(np.sum(np.diff(fprs) * np.array(tprs[:-1])))
+        return float(_trapz(tprs, fprs))
 
 
 # ============================================================================

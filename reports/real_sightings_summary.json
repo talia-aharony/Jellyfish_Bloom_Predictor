@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-04-07T00:53:52",
+  "n_sightings_scraped": 60,
+  "n_evaluated": 60,
+  "source_summary": {
+    "citizen_science_fallback": 60
+  },
+  "GRU_baseline": {
+    "n_evaluated": 60,
+    "n_correct": 39,
+    "accuracy": 0.65,
+    "precision": 0.5882,
+    "recall": 1.0,
+    "f1": 0.7407,
+    "auc": 0.785,
+    "tp": 30,
+    "fp": 21,
+    "fn": 0,
+    "tn": 9
+  },
+  "JellyfishNet": {
+    "n_evaluated": 60,
+    "n_correct": 38,
+    "accuracy": 0.6333,
+    "precision": 0.5769,
+    "recall": 1.0,
+    "f1": 0.7317,
+    "auc": 0.8333,
+    "tp": 30,
+    "fp": 22,
+    "fn": 0,
+    "tn": 8
+  }
+}
