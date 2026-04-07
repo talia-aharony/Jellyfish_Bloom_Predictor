@@ -9,10 +9,7 @@ All models output:           (batch_size, 1)  — sigmoid probability
 
 Model hierarchy (weakest → strongest):
   BaselineLogisticRegression  — hand-crafted features, linear classifier
-  FeedforwardNet              — flattened MLP
-  LSTMNet / GRUNet            — plain recurrent nets
-  Conv1DNet                   — purely convolutional
-  HybridNet                   — CNN + bidirectional GRU + attention  [old default]
+    GRUNet                      — plain recurrent net
   JellyfishNet                — recommended: mask-aware, position-encoded,
                                 beach-embedding, residual GRU + calibrated head
 """
@@ -42,33 +39,6 @@ class BaselineLogisticRegression(nn.Module):
 # Simple neural nets
 # ============================================================================
 
-class FeedforwardNet(nn.Module):
-    def __init__(self, input_dim, dropout_prob=0.3):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 128), nn.BatchNorm1d(128), nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(128, 64),        nn.BatchNorm1d(64),  nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(64, 32),         nn.BatchNorm1d(32),  nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(32, 1),
-        )
-
-    def forward(self, x):
-        return torch.sigmoid(self.net(x.view(x.size(0), -1)))
-
-
-class LSTMNet(nn.Module):
-    def __init__(self, input_dim, hidden_dim=64, num_layers=2, dropout_prob=0.3):
-        super().__init__()
-        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers,
-                            dropout=dropout_prob if num_layers > 1 else 0,
-                            batch_first=True)
-        self.head = nn.Sequential(nn.Linear(hidden_dim, 32), nn.ReLU(),
-                                  nn.Dropout(dropout_prob), nn.Linear(32, 1))
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        return torch.sigmoid(self.head(out[:, -1, :]))
-
 
 class GRUNet(nn.Module):
     def __init__(self, input_dim, hidden_dim=64, num_layers=2, dropout_prob=0.3):
@@ -82,64 +52,6 @@ class GRUNet(nn.Module):
     def forward(self, x):
         out, _ = self.gru(x)
         return torch.sigmoid(self.head(out[:, -1, :]))
-
-
-class Conv1DNet(nn.Module):
-    def __init__(self, input_dim, hidden_dim=64, dropout_prob=0.3):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv1d(input_dim, hidden_dim,    kernel_size=3, padding=1),
-            nn.BatchNorm1d(hidden_dim), nn.ReLU(), nn.MaxPool1d(2), nn.Dropout(dropout_prob),
-            nn.Conv1d(hidden_dim, hidden_dim//2, kernel_size=3, padding=1),
-            nn.BatchNorm1d(hidden_dim//2), nn.ReLU(), nn.MaxPool1d(2), nn.Dropout(dropout_prob),
-        )
-        self.pool = nn.AdaptiveAvgPool1d(1)
-        self.head = nn.Sequential(nn.Linear(hidden_dim//2, 32), nn.ReLU(),
-                                  nn.Dropout(dropout_prob), nn.Linear(32, 1))
-
-    def forward(self, x):
-        x = self.conv(x.transpose(1, 2))
-        return torch.sigmoid(self.head(self.pool(x).squeeze(-1)))
-
-
-# ============================================================================
-# Old Hybrid (kept for comparison)
-# ============================================================================
-
-class HybridNet(nn.Module):
-    """CNN + bidirectional GRU + attention. Previous default model."""
-
-    def __init__(self, input_dim, hidden_dim=64, dropout_prob=0.3):
-        super().__init__()
-        self.cnn_short  = nn.Sequential(
-            nn.Conv1d(input_dim, hidden_dim//2, 3, padding=1),
-            nn.BatchNorm1d(hidden_dim//2), nn.ReLU(), nn.Dropout(dropout_prob))
-        self.cnn_medium = nn.Sequential(
-            nn.Conv1d(input_dim, hidden_dim//2, 5, padding=2),
-            nn.BatchNorm1d(hidden_dim//2), nn.ReLU(), nn.Dropout(dropout_prob))
-        self.conv_fuse  = nn.Sequential(
-            nn.Conv1d(hidden_dim, hidden_dim, 1),
-            nn.BatchNorm1d(hidden_dim), nn.ReLU())
-
-        gru_h = max(8, hidden_dim // 2)
-        self.gru = nn.GRU(hidden_dim, gru_h, num_layers=1,
-                          bidirectional=True, batch_first=True)
-        self.attention = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim, 1))
-        self.head = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim), nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim, hidden_dim//2), nn.ReLU(), nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim//2, 1))
-
-    def forward(self, x):
-        xt = x.transpose(1, 2)
-        cnn = self.conv_fuse(torch.cat([self.cnn_short(xt), self.cnn_medium(xt)], dim=1))
-        gru_out, _ = self.gru(cnn.transpose(1, 2))
-        last = gru_out[:, -1, :]
-        attn = torch.softmax(self.attention(gru_out).squeeze(-1), dim=1)
-        ctx  = (gru_out * attn.unsqueeze(-1)).sum(1)
-        return torch.sigmoid(self.head(torch.cat([last, ctx], dim=1)))
 
 
 # ============================================================================

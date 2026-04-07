@@ -3,24 +3,23 @@
 Edit values here to change project-wide defaults in one place.
 """
 
-DEFAULT_LOOKBACK_DAYS = 14
+DEFAULT_LOOKBACK_DAYS = 24
 # Weather CSV path options:
 #   - None: auto-discover all IMS CSV files in data/IMS/ and consolidate them
 #   - "path/to/file.csv": use single IMS CSV file
 #   - ["file1.csv", "file2.csv"]: consolidate these specific CSV files
 DEFAULT_WEATHER_CSV_PATH = None  # Auto-discover all IMS CSV files
-DEFAULT_USE_INTEGRATED_DATA = True
-DEFAULT_INCLUDE_LIVE_XML = True
+DEFAULT_INCLUDE_LIVE_XML = True  # Include live RSS feeds (city/sea/flood alerts)
 
-DEFAULT_BATCH_SIZE = 32
-DEFAULT_LEARNING_RATE = 0.001
-DEFAULT_DROPOUT_PROB = 0.3
+DEFAULT_BATCH_SIZE = 17
+DEFAULT_LEARNING_RATE = 0.000707
+DEFAULT_DROPOUT_PROB = 0.14
 DEFAULT_NUM_EPOCHS = 100
-DEFAULT_PATIENCE = 15
-DEFAULT_HYBRID_HIDDEN_DIM = 64
+DEFAULT_PATIENCE = 8
+DEFAULT_HYBRID_HIDDEN_DIM = 160
 DEFAULT_REPORT_PATH = 'training_report_latest.json'
 
-DEFAULT_MODEL_NAMES = 'GRU,JellyfishNet'
+DEFAULT_MODEL_NAMES = 'JellyfishNet'
 DEFAULT_OUTPUT_DIR = 'models'
 
 DEFAULT_FINETUNE_EPOCHS = 20

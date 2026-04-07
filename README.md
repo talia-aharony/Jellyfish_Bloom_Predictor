@@ -9,7 +9,6 @@ Jellyfish_Bloom_Predictor/
 ├── jellyfish/                  # Core package
 │   ├── __init__.py
 │   ├── data_loader.py
-│   ├── data_loader_forecasting.py
 │   ├── evaluator.py
 │   ├── evaluate_models.py
 │   ├── models.py
@@ -51,7 +50,6 @@ Train with all input sources (citizen science + IMS weather CSV + live RSS):
 
 ```bash
 python scripts/train.py \
-	--use-integrated-data \
 	--weather-csv-path data/IMS/data_202603142120.csv \
 	--lookback-days 14
 ```
@@ -66,7 +64,6 @@ Predict using integrated data inputs (including live RSS where available):
 
 ```bash
 python scripts/predict.py \
-	--use-integrated-data \
 	--weather-csv-path data/IMS/data_202603142120.csv \
 	--lookback-days 14 \
 	--beach-id 14 \
@@ -108,7 +105,7 @@ Each run now saves a JSON report containing:
 - Training configuration (`lookback_days`, `batch_size`, `learning_rate`, `dropout_prob`, `num_epochs`, `patience`, `hybrid_hidden_dim`)
 - Model metrics (`accuracy`, `precision`, `recall`, `f1`, `auc`, confusion matrix)
 
-### Suggested experiment grid for HybridNet
+### Suggested experiment grid for JellyfishNet
 
 Run separate experiments by varying one factor at a time:
 
@@ -144,24 +141,24 @@ For each run, summarize:
 Use this helper to compare saved JSON reports and rank runs by your chosen metric:
 
 ```bash
-python scripts/compare_reports.py --model Hybrid --sort-by recall
+python scripts/compare_reports.py --model JellyfishNet --sort-by recall
 ```
 
 Useful variants:
 
 ```bash
-python scripts/compare_reports.py --pattern "training_report*.json" --extra-pattern "reports/*.json" --model Hybrid --sort-by auc --top-k 10
-python scripts/compare_reports.py --model LSTM --sort-by recall
+python scripts/compare_reports.py --pattern "training_report*.json" --extra-pattern "reports/*.json" --model JellyfishNet --sort-by auc --top-k 10
+python scripts/compare_reports.py --model GRU --sort-by recall
 ```
 
 This makes your hyperparameter commentary easier: cite the top-ranked run and compare it against the next 2-3 runs by F1/AUC and precision/recall tradeoff.
 
-### GRU vs Hybrid sweep runner
+### GRU vs JellyfishNet sweep runner
 
 Run a grid sweep (multiple train runs, one JSON report per run):
 
 ```bash
-python scripts/sweep_gru_hybrid.py --use-integrated-data --lookback-days 14
+python scripts/sweep_gru_hybrid.py --lookback-days 14
 ```
 
 Each sweep run now also saves its model checkpoints in a unique folder under `models/`, so different hyperparameter runs do not overwrite each other.
@@ -171,7 +168,6 @@ Run many more experiments (large preset, shuffled, keep going on failures):
 ```bash
 python scripts/sweep_gru_hybrid.py \
 	--preset large \
-	--use-integrated-data \
 	--shuffle \
 	--continue-on-error \
 	--skip-existing
@@ -183,7 +179,6 @@ Run a sampled subset from a very large grid:
 python scripts/sweep_gru_hybrid.py \
 	--preset large \
 	--sample-runs 40 \
-	--use-integrated-data \
 	--tag sampled
 ```
 
@@ -209,7 +204,20 @@ You can now use package-style imports:
 
 ```python
 from jellyfish.data_loader import load_jellyfish_data
-from jellyfish.models import HybridNet
+from jellyfish.models import JellyfishNet
 from jellyfish.predictor import JellyfishPredictor
 from jellyfish.weather import IMSWeatherFetcher
 ```
+
+## Workspace Cleanup
+
+To keep outputs organized after many runs:
+
+- Active model checkpoints stay in `models/` directory (`baseline_model.pth`, `gru_model.pth`, `jellyfishnet_model.pth`).
+- Older model sweep folders are archived under `models/archive/sweeps/`.
+- Historical report batches are archived under:
+	- `reports/archive/sweeps/`
+	- `reports/archive/diagnostics/`
+	- `reports/archive/experiments/`
+	- `reports/archive/smart_tuning/`
+- Latest smart-tuning run remains at `reports/smart_tuning_*` in the top-level `reports/` folder.

@@ -1,0 +1,152 @@
+=======================================
+JELLYFISH FORECASTING — GLOBAL TRAINING
+=======================================
+  lookback_days: 24
+  data_loading_mode: integrated
+  weather_csv_path: None
+  include_live_xml: True
+  batch_size: 17
+  learning_rate: 0.000707
+  dropout_prob: 0.14
+  num_epochs: 100
+  patience: 8
+  hybrid_hidden_dim: 160
+  model_names: ['Baseline', 'JellyfishNet']
+  scheduler_factor: 0.5
+  scheduler_patience: 5
+  grad_clip_norm: 1.0
+  threshold_min: 0.1
+  threshold_max: 0.9
+  threshold_steps: 81
+  threshold_min_precision: 0.4
+  threshold_target_recall: 0.95
+  positive_class_weight: 1.0
+  threshold_selection_metric: maximize_precision_then_f1_subject_to_target_recall
+
+---------------
+1. LOADING DATA
+---------------
+===============================================
+INTEGRATED DATA LOADING - SYMMETRIC AGGREGATION
+===============================================
+
+👥 Loading citizen science data...
+✓ Loaded events: 25384 records from 20 beaches
+✓ Merged occurrence + measurement data: 64078 observations
+✓ Parsed all citizen science features
+
+📊 Aggregating citizen science data by (beach_id, date)...
+✓ Aggregated to 17173 beach-date combinations
+  Unique beaches: 20
+  Date range: 2011-07-01 to 2024-05-31
+Auto-discovered 4 IMS CSV file(s):
+  - data_202604052350.csv
+  - data_202604052359.csv
+  - data_2026040601.csv
+  - data_2026040603.csv
+
+📡 Loading IMS weather data from data/IMS...
+✓ Raw weather data loaded: 511171 records
+✓ Parsed weather data: 511171 observations
+  Unique stations: 12
+  Stations sample: Rosh Haniqra 09/2003-01/2026, Shave Ziyyon 10/2009-01/2026, Haifa Refineries 01/1999-01/2026, Haifa Technion 01/1995-01/2026, En Karmel 02/1993-01/2026, ...
+  Date range: 2011-07-01 to 2026-02-28
+  Temperature: -2.0°C to 42.4°C
+  Wind speed: 0.0 to 20.5 m/s
+
+📊 Aggregating IMS weather data by (beach_id, date)...
+  Station Rosh Haniqra 09/2003-01/2026 mapped to 1 beach(es)
+  Station Shave Ziyyon 10/2009-01/2026 mapped to 1 beach(es)
+  Station Haifa Refineries 01/1999-01/2026 mapped to 2 beach(es)
+  Station Haifa Technion 01/1995-01/2026 mapped to 1 beach(es)
+  Station En Karmel 02/1993-01/2026 mapped to 2 beach(es)
+  Station Zikhron Yaaqov 02/1993-01/2026 mapped to 1 beach(es)
+  Station Hadera Port 01/1996-01/2026 mapped to 2 beach(es)
+  Station En Hahoresh 08/2004-01/2026 mapped to 2 beach(es)
+  Station Tel Aviv Coast 04/2005-01/2026 mapped to 3 beach(es)
+  Station Bet Dagan Man 01/1964-01/2026 mapped to 2 beach(es)
+  Station Ashdod Port 07/2004-01/2026 mapped to 2 beach(es)
+  Station Ashqelon Port 01/2007-01/2026 mapped to 1 beach(es)
+✓ Aggregated to 106780 beach-date combinations
+  Stations mapped: 12
+  Beaches covered: 20
+  Date range: 2011-07-01 to 2026-02-28
+
+🌐 Loading live IMS RSS feeds...
+  Auto-detected coast regions from beach locations: ['central_coast', 'northern_coast', 'southern_coast']
+  Fetching all coast RSS feeds plus flood alerts
+[IMSWeatherFetcher] Sea RSS loaded: northern_coast
+[IMSWeatherFetcher] Sea RSS loaded: central_coast
+[IMSWeatherFetcher] Sea RSS loaded: southern_coast
+[IMSWeatherFetcher] City RSS loaded: ashdod
+[IMSWeatherFetcher] City RSS loaded: haifa
+[IMSWeatherFetcher] City RSS loaded: tel_aviv_coast
+[IMSWeatherFetcher] Flood alert RSS loaded: north
+[IMSWeatherFetcher] Flood alert RSS loaded: center
+[IMSWeatherFetcher] Flood alert RSS loaded: south
+✓ Live RSS daily features loaded: 7 date rows from coast RSS feeds
+✓ Built nearest-source map for 20 beaches
+✓ Mapped live RSS features to beach-date rows: 140
+✓ Daily weather enriched with nearest-mapped live RSS features
+
+🔗 Merging citizen science and weather data...
+✓ Merged: 17173 records
+  Citizen-only records: 28
+  Weather-enriched records: 17145
+
+📈 Creating feature sequences...
+  Citizen science features: 11
+  Weather features: 22
+  Total features per day: 33
+=====================
+FINAL DATASET SUMMARY
+=====================
+Total sequences:                16696
+Input shape:                    (16696, 24, 33) (samples, days, features)
+Output shape:                   (16696,)
+
+Total features per day:         33
+
+Positive samples (jellyfish):   5458 (32.7%)
+Negative samples:               11238 (67.3%)
+
+Unique beaches:                 19
+Date range:                     2011-07-01 to 2024-05-31
+=====================
+
+---------------------
+2. DATA NORMALISATION
+---------------------
+✓ Normalised
+
+--------------
+3. DATALOADERS
+--------------
+✓ Train: 11687  Val: 2504  Test: 2505
+
+------------------
+4. TRAINING MODELS
+------------------
+Device: cpu
+
+
+── Baseline ──
+  Early stopping at epoch 9
+
+  Recall=0.9532  Precision=0.3678  F1=0.5308  Acc=0.4255  AUC=0.6824  Thresh=0.23  (20s)
+  Saved → models/baseline_model.pth
+
+── JellyfishNet ──
+  Early stopping at epoch 13
+
+  Recall=0.9754  Precision=0.3594  F1=0.5252  Acc=0.3988  AUC=0.6972  Thresh=0.13  (605s)
+  Saved → models/jellyfishnet_model.pth
+================
+TRAINING SUMMARY
+================
+Model                    Recall  Precision         F1   Accuracy        AUC  Threshold
+──────────────────────────────────────────────────────────────────────────────────────
+Baseline                 0.9532     0.3678     0.5308     0.4255     0.6824       0.23
+JellyfishNet             0.9754     0.3594     0.5252     0.3988     0.6972       0.13
+================
+✓ Saved training report: training_report_latest.json

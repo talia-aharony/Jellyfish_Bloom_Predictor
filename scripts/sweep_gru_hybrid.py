@@ -22,7 +22,6 @@ if ROOT not in sys.path:
 from jellyfish.settings import (
     DEFAULT_LOOKBACK_DAYS,
     DEFAULT_WEATHER_CSV_PATH,
-    DEFAULT_USE_INTEGRATED_DATA,
     DEFAULT_INCLUDE_LIVE_XML,
     DEFAULT_BATCH_SIZE,
     DEFAULT_NUM_EPOCHS,
@@ -193,7 +192,6 @@ def main():
     parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK_DAYS, help="Single lookback override")
     parser.add_argument("--lookback-days-list", type=str, default="", help="Comma list override, e.g. 7,14,21")
     parser.add_argument("--weather-csv-path", type=str, default=DEFAULT_WEATHER_CSV_PATH)
-    parser.add_argument("--use-integrated-data", action="store_true", default=DEFAULT_USE_INTEGRATED_DATA)
     parser.add_argument("--disable-live-xml", action="store_true", default=not DEFAULT_INCLUDE_LIVE_XML)
 
     parser.add_argument("--learning-rates", type=str, default="", help="Comma list override")
@@ -298,7 +296,7 @@ def main():
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "preset": args.preset,
         "seed": args.seed,
-        "use_integrated_data": bool(args.use_integrated_data),
+        "use_integrated_data": True,
         "include_live_xml": not bool(args.disable_live_xml),
         "weather_csv_path": args.weather_csv_path,
         "models": args.models,
@@ -386,8 +384,6 @@ def main():
             "--report-path", report_path,
         ]
 
-        if args.use_integrated_data:
-            cmd.append("--use-integrated-data")
         if args.disable_live_xml:
             cmd.append("--disable-live-xml")
 

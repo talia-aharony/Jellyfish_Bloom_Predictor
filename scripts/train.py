@@ -13,7 +13,6 @@ from jellyfish.train import train_all_models, finetune_per_beach
 from jellyfish.settings import (
     DEFAULT_LOOKBACK_DAYS,
     DEFAULT_WEATHER_CSV_PATH,
-    DEFAULT_USE_INTEGRATED_DATA,
     DEFAULT_INCLUDE_LIVE_XML,
     DEFAULT_BATCH_SIZE,
     DEFAULT_LEARNING_RATE,
@@ -42,7 +41,6 @@ from jellyfish.settings import (
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrypoint wrapper for jellyfish training")
     parser.add_argument('--lookback-days', type=int, default=DEFAULT_LOOKBACK_DAYS)
-    parser.add_argument('--use-integrated-data', action='store_true', default=DEFAULT_USE_INTEGRATED_DATA)
     parser.add_argument('--weather-csv-path', type=str, default=DEFAULT_WEATHER_CSV_PATH)
     parser.add_argument('--disable-live-xml', action='store_true', default=not DEFAULT_INCLUDE_LIVE_XML)
     parser.add_argument('--batch-size', type=int, default=DEFAULT_BATCH_SIZE)
@@ -78,7 +76,6 @@ if __name__ == "__main__":
         finetune_per_beach(
             global_checkpoint=checkpoint,
             lookback_days=args.lookback_days,
-            use_integrated_data=args.use_integrated_data,
             weather_csv_path=args.weather_csv_path,
             include_live_xml=not args.disable_live_xml,
             finetune_epochs=args.finetune_epochs,
@@ -101,7 +98,6 @@ if __name__ == "__main__":
     else:
         train_all_models(
             lookback_days=args.lookback_days,
-            use_integrated_data=args.use_integrated_data,
             weather_csv_path=args.weather_csv_path,
             include_live_xml=not args.disable_live_xml,
             batch_size=args.batch_size,

@@ -40,9 +40,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from jellyfish.data_loader import load_jellyfish_data
+from jellyfish.data_loader import load_integrated_data
 from jellyfish.predictor import JellyfishPredictor
-from jellyfish.settings import DEFAULT_LOOKBACK_DAYS
+from jellyfish.settings import DEFAULT_LOOKBACK_DAYS, DEFAULT_WEATHER_CSV_PATH
 
 # ---------------------------------------------------------------------------
 # Beach ID → name mapping (from citizen-science GBIF data)
@@ -314,7 +314,15 @@ def _get_fallback_sightings() -> list[dict]:
     print("  Loading citizen-science data for fallback sightings …")
 
     try:
-        X, y, metadata = load_jellyfish_data(lookback_days=DEFAULT_LOOKBACK_DAYS, forecast_days=1)
+        result = load_integrated_data(
+            weather_csv_path=None,
+            lookback_days=DEFAULT_LOOKBACK_DAYS,
+            forecast_days=1,
+            include_live_xml=False,
+        )
+        if result is None:
+            raise RuntimeError("load_integrated_data returned None")
+        X, y, metadata = result[0], result[1], result[2]
     except Exception as exc:
         print(f"  ⚠  Could not load citizen-science data: {exc}")
         return _get_hardcoded_fallback()
@@ -452,7 +460,6 @@ def ensure_models_trained(lookback_days: int, models_dir: str = "models") -> boo
         from jellyfish.train import train_all_models
         train_all_models(
             lookback_days=lookback_days,
-            use_integrated_data=False,       # citizen-science only for speed
             include_live_xml=False,
             batch_size=32,
             learning_rate=0.001,
@@ -869,7 +876,6 @@ def main():
     predictor.load_data_cache(
         lookback_days=args.lookback,
         forecast_days=1,
-        use_integrated_data=False,
         include_live_xml=False,
     )
 

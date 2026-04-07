@@ -13,6 +13,11 @@ import json
 import os
 from typing import Any, Dict, List
 
+try:
+    from jellyfish.terminal_format import rule
+except ImportError:
+    from terminal_format import rule
+
 
 def load_report(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
@@ -132,16 +137,18 @@ def main() -> None:
     print(f"Sort metric: {args.sort_by}")
     print(f"Total runs considered: {len(rows)}")
     print()
-    print(
-        f"{'Report File':<36} {'Recall':<8} {'Prec':<8} {'F1':<8} {'AUC':<8} {'Thr':<8} {'ValRec':<8} {'ValF1':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
+    header = (
+        f"{'Report File':<36} {'Recall':<8} {'Prec':<8} {'F1':<8} {'AUC':<8} {'Thr':<8} "
+        f"{'ValRec':<8} {'ValF1':<8} {'Acc':<8} {'LR':<10} {'Dropout':<8} {'Batch':<6} {'HDim':<6}"
     )
-    print("-" * 148)
+    print(header)
+    print(rule(header, fill='-'))
     for row in top_rows:
         print(format_row(row))
 
     best = top_rows[0]
     print("\nBest run summary")
-    print("-" * 40)
+    print(rule("Best run summary", fill='-'))
     print(f"File: {best['file']}")
     print(f"Path: {best['path']}")
     print(f"Timestamp: {best['timestamp']}")

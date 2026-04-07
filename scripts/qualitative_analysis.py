@@ -26,7 +26,6 @@ if ROOT not in sys.path:
 from jellyfish.predictor import JellyfishPredictor, create_engineered_features_forecasting
 from jellyfish.settings import (
     DEFAULT_LOOKBACK_DAYS,
-    DEFAULT_USE_INTEGRATED_DATA,
     DEFAULT_WEATHER_CSV_PATH,
     DEFAULT_INCLUDE_LIVE_XML,
 )
@@ -185,7 +184,6 @@ def main():
     parser.add_argument("--models", type=str, default="GRU,Hybrid", help="Comma-separated model names to analyze")
     parser.add_argument("--samples-per-category", type=int, default=20)
     parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK_DAYS)
-    parser.add_argument("--use-integrated-data", action="store_true", default=DEFAULT_USE_INTEGRATED_DATA)
     parser.add_argument("--weather-csv-path", type=str, default=DEFAULT_WEATHER_CSV_PATH)
     parser.add_argument("--disable-live-xml", action="store_true", default=not DEFAULT_INCLUDE_LIVE_XML)
     parser.add_argument("--threshold", type=float, default=0.5)
@@ -206,7 +204,6 @@ def main():
     predictor.load_data_cache(
         lookback_days=args.lookback_days,
         forecast_days=1,
-        use_integrated_data=args.use_integrated_data,
         weather_csv_path=args.weather_csv_path,
         include_live_xml=not args.disable_live_xml,
     )
@@ -332,7 +329,7 @@ def main():
     lines.append("")
     lines.append(f"Generated: {datetime.now().isoformat(timespec='seconds')}")
     lines.append(f"Lookback days: {args.lookback_days}")
-    lines.append(f"Integrated data: {bool(args.use_integrated_data)}")
+    lines.append("Integrated data: True")
     lines.append(f"Primary model for case breakdown: {primary_model}")
     lines.append("")
 

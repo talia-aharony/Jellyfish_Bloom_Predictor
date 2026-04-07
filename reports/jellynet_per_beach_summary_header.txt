@@ -1,0 +1,6 @@
+# Per-beach aggregated qualitative/quantitative summary
+# Primary model: JellyfishNet
+# Threshold used for predictions: 0.5
+# Each row aggregates all test samples for a beach.
+# Metrics: accuracy/precision/recall/f1, confusion counts (tp/fp/tn/fn),
+# and average contextual inputs from the lookback last day.
