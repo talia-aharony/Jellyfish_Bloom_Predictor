@@ -682,7 +682,15 @@ class JellyfishPredictor:
                 return_model_used=True,
             )
         else:
-            # Use baseline with engineered features
+            # Baseline compatibility:
+            # Some checkpoints expect engineered features; others expect flattened raw sequence.
+            baseline_model = self.models.get('Baseline')
+            expected_dim = None
+            if baseline_model is not None and hasattr(baseline_model, 'linear'):
+                expected_dim = int(baseline_model.linear.in_features)
+
+            raw_dim = int(np.prod(X_sequence.shape))
+
             X_eng = create_engineered_features_forecasting(
                 X_sequence[np.newaxis, ...],
                 lookback=self.normalization_stats['lookback_days']
@@ -691,8 +699,18 @@ class JellyfishPredictor:
             mean_eng = self.normalization_stats['mean_eng']
             std_eng = self.normalization_stats['std_eng']
             X_eng_normalized = (X_eng_tensor - mean_eng) / (std_eng + 1e-8)
+            eng_dim = int(X_eng_normalized.numel())
+
+            if expected_dim is not None and expected_dim == raw_dim:
+                X_tensor = torch.FloatTensor(X_sequence)
+                mean = self.normalization_stats['mean']
+                std = self.normalization_stats['std']
+                X_input = (X_tensor - mean) / (std + 1e-8)
+            else:
+                X_input = X_eng_normalized
+
             probability, model_used = self.predict_sequence(
-                X_eng_normalized,
+                X_input,
                 model_name,
                 beach_id=beach_id,
                 return_model_used=True,

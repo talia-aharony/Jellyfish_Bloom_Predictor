@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-04-07T03:19:49",
+  "filter": {
+    "start_date": "2024-06-01",
+    "end_date": "2026-12-31",
+    "max_batches": 500
+  },
+  "n_total_rows": 2402,
+  "n_valid_compared": 2258,
+  "n_mapped_beach": 2260,
+  "n_unmapped_beach": 142,
+  "Baseline": {
+    "n": 2258,
+    "accuracy": 0.5655447298494243,
+    "precision": 1.0,
+    "recall": 0.5655447298494243,
+    "f1": 0.7224893917963225,
+    "tp": 1277,
+    "fp": 0,
+    "fn": 981,
+    "tn": 0
+  },
+  "JellyfishNet": {
+    "n": 2258,
+    "accuracy": 0.4743135518157662,
+    "precision": 1.0,
+    "recall": 0.4743135518157662,
+    "f1": 0.6434364674076299,
+    "tp": 1071,
+    "fp": 0,
+    "fn": 1187,
+    "tn": 0
+  }
+}

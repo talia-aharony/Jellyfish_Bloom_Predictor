@@ -8,13 +8,7 @@ import requests
 from jellyfish.predictor import JellyfishPredictor
 
 
-def parse_dor_reports():
-    listing_html = requests.get(
-        "https://www.meduzot.co.il/list/4",
-        headers={"User-Agent": "Mozilla/5.0"},
-        timeout=30,
-    ).text
-
+def _parse_listing_html(listing_html):
     parts = listing_html.split('<div class="list_obs link white_bkg')
     rows = []
     for part in parts[1:]:
@@ -44,6 +38,37 @@ def parse_dor_reports():
                     ),
                 }
             )
+    return rows
+
+
+def parse_dor_reports(max_pages=50, max_empty_pages=3):
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    rows = []
+
+    base_html = requests.get(
+        "https://www.meduzot.co.il/list/4",
+        headers=headers,
+        timeout=30,
+    ).text
+    rows.extend(_parse_listing_html(base_html))
+
+    empty_pages = 0
+    for page in range(2, max_pages + 1):
+        page_html = requests.get(
+            f"https://www.meduzot.co.il/list/4/{page}",
+            headers=headers,
+            timeout=30,
+        ).text
+        page_rows = _parse_listing_html(page_html)
+        if not page_rows:
+            empty_pages += 1
+            if empty_pages >= max_empty_pages:
+                break
+            continue
+
+        empty_pages = 0
+        rows.extend(page_rows)
 
     reports = pd.DataFrame(rows)
     reports = reports.drop_duplicates(subset=["observation_id"])
