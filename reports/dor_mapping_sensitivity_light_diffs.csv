@@ -1,0 +1,7 @@
+scenario,changed_predictions,changed_to_yes,changed_to_no
+hifa_south_shift,15,13,0
+hifa_north_shift,12,0,10
+telaviv_central,4,0,2
+hifa_center_shift,2,0,0
+telaviv_north,2,0,0
+telaviv_south,2,0,0

@@ -1,0 +1,8 @@
+predictions,yes,no,yes_rate_pct,scenario
+98,47,51,47.95918367346938,hifa_south_shift
+98,34,64,34.69387755102041,baseline
+98,34,64,34.69387755102041,hifa_center_shift
+98,34,64,34.69387755102041,telaviv_north
+98,34,64,34.69387755102041,telaviv_south
+98,32,66,32.6530612244898,telaviv_central
+98,24,74,24.489795918367346,hifa_north_shift
