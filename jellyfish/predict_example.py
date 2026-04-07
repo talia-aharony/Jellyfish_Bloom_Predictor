@@ -91,6 +91,7 @@ def _resolve_forecast_date(days_ahead=None, forecast_date=None):
 
 def run_prediction_session(predictor, loaded_models, metadata):
     """Interactive prediction loop that reuses the already-loaded predictor/models."""
+    print("Interactive mode enabled. Models/data stay loaded until you quit.")
     while True:
         print()
         print("Enter 'q' at any prompt to quit.")
@@ -142,7 +143,10 @@ def run_prediction_session(predictor, loaded_models, metadata):
 
         beach_matches = metadata[metadata["beach_id"] == beach_id]
         if beach_matches.empty:
-            print(f"❌ ERROR: beach_id {beach_id} not found in dataset metadata")
+            print(
+                f"❌ beach_id {beach_id} is not available in sequence cache. "
+                "This usually means insufficient history for the configured lookback window."
+            )
             continue
 
         beach_name = str(beach_matches.iloc[0]["beach_name"])
@@ -198,8 +202,8 @@ def run_prediction_session(predictor, loaded_models, metadata):
             predictor.compare_predictions(beach_id=beach_id, forecast_date=forecast_date)
 
         print()
-        again = input("Run another prediction? [y/N]: ").strip().lower()
-        if again not in {"y", "yes"}:
+        again = input("Press Enter to run another prediction, or type 'q' to quit: ").strip().lower()
+        if again in {"q", "quit", "exit"}:
             break
 
 
@@ -268,7 +272,10 @@ def main(
 
     section("STEP 4: Get User Input", fill="-")
     metadata = predictor.data_cache["metadata"]
-    if interactive:
+    auto_interactive = interactive or (
+        beach_id is None and days_ahead is None and forecast_date is None
+    )
+    if auto_interactive:
         run_prediction_session(predictor, loaded_models, metadata)
         return
     if beach_id is None or (days_ahead is None and forecast_date is None):
@@ -287,7 +294,10 @@ def main(
 
     beach_matches = metadata[metadata["beach_id"] == beach_id]
     if beach_matches.empty:
-        print(f"❌ ERROR: beach_id {beach_id} not found in dataset metadata")
+        print(
+            f"❌ beach_id {beach_id} is not available in sequence cache. "
+            "This usually means insufficient history for the configured lookback window."
+        )
         return
 
     beach_name = str(beach_matches.iloc[0]["beach_name"])
